@@ -257,5 +257,3 @@ async def upload_molecules(file: UploadFile):
             print(f"Invalid SMILES string: {row['smiles']}")
 
     return {"number_of_molecules_added": number_of_molecules_added}
-
->>>>>>> feature/fastapi-in-memory-molecules-crud
