@@ -1,4 +1,4 @@
-
+from os import getenv
 from typing import Annotated
 from starlette.responses import JSONResponse
 import src.exception as exception
@@ -257,3 +257,8 @@ async def upload_molecules(file: UploadFile):
             print(f"Invalid SMILES string: {row['smiles']}")
 
     return {"number_of_molecules_added": number_of_molecules_added}
+
+
+@app.get("/")
+def get_server():
+    return {"server_id": getenv("SERVER_ID", "1")}
