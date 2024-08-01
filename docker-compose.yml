@@ -2,18 +2,18 @@ version: '3.8'
 services:
   web1:
     build: .
-    volumes:
-      - ./src:/src
     environment:
       SERVER_ID: SERVER-1
+    networks:
+      - webnet
 
   web2:
     build: .
-    volumes:
-      - ./src:/src
     environment:
       SERVER_ID: SERVER-2
-      
+    networks:
+      - webnet
+
   nginx:
     image: nginx:latest
     ports:
@@ -23,3 +23,9 @@ services:
     depends_on:
       - web1
       - web2
+    networks:
+      - webnet
+
+networks:
+  webnet:
+    driver: bridge
