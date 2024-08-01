@@ -12,9 +12,6 @@ import csv
 app = FastAPI()
 
 
-# probably it is not a good practice, but I will write handlers in the same file for now, I am interested what the
-# common practice is though.
-
 @app.exception_handler(exception.InvalidSmilesException)
 def invalid_smiles_exception_handler(request, exc):
     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exc)})

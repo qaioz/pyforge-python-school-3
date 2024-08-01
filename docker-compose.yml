@@ -23,5 +23,3 @@ services:
     depends_on:
       - web1
       - web2
-
-
