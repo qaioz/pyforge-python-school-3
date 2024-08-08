@@ -1,63 +1,41 @@
-from fastapi import FastAPI
-from src.api.routes import molecule_routes
+from typing import Annotated
+import src.mapper as mapper
+from src.dependencies import get_molecule_repository as repository
+from fastapi import APIRouter, Body
+from fastapi import Depends
+from fastapi import status
 
-app = FastAPI()
-app.include_router(molecule_routes.router, prefix="/molecules", tags=["molecules"])
+from src.models.molecule_models import MoleculeInDB
+from src.repository.abstract_repository import Repository
+from src.schemas.molecule_schemas import AddMoleculeRequest, MoleculeResponse
+
+router = APIRouter()
 
 
-# asd
+@router.post("/",
+             status_code=status.HTTP_201_CREATED,
+             responses={status.HTTP_201_CREATED: {"description": "Molecule added successfully"},
+                        status.HTTP_400_BAD_REQUEST: {"description": "Smiles string is invalid or missing"}}
+             )
+def add_molecule(add_molecule_request: Annotated[AddMoleculeRequest, Body(description="The request body")],
+                 molecules_repository: Repository[int] = Depends(repository)) -> MoleculeResponse:
+    """
+    Add a new molecule to the repository.
 
+    :param add_molecule_request: The request body.
 
-# from typing import Annotated
-# from starlette.responses import JSONResponse
-# import src.exception as exception
-# from fastapi import FastAPI, status, HTTPException, UploadFile, Query, Path, Body
-# from rdkit import Chem
-# from src.models import Molecule, AddMoleculeRequest, MoleculeResponse
-# from src.repository.molecule_repositories import Repository, InMemoryMoleculesRepository
-# import csv
-#
-# app = FastAPI()
-#
-#
-# # probably it is not a good practice, but I will write handlers in the same file for now, I am interested what the
-# # common practice is though.
-#
-# @app.exception_handler(exception.InvalidSmilesException)
-# def invalid_smiles_exception_handler(request, exc):
-#     return JSONResponse(status_code=status.HTTP_400_BAD_REQUEST, content={"detail": str(exc)})
-#
-#
-# @app.exception_handler(exception.UnknownIdentifierException)
-# def unknown_identifier_exception_handler(request, exc):
-#     return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)})
-#
-#
-#
-# molecules_repository: Repository[int, Molecule] = InMemoryMoleculesRepository()
-#
-#
-# @app.post("/molecules",
-#           status_code=status.HTTP_201_CREATED,
-#           responses={status.HTTP_201_CREATED: {"description": "Molecule added successfully"},
-#                      status.HTTP_400_BAD_REQUEST: {"description": "Smiles string is invalid or missing"}}
-#           )
-# def add_molecule(add_molecule_request: Annotated[AddMoleculeRequest, Body(description="The request body")]) \
-#         -> MoleculeResponse:
-#     """
-#     Add a new molecule to the repository.
-#
-#     :param add_molecule_request: The request body.
-#
-#     :return MoleculeResponse: containing the details of the added molecule.
-#
-#     :raises InvalidSmilesException:
-#     """
-#
-#     molecule = Molecule.from_add_molecule_request(add_molecule_request)
-#     molecules_repository.add(molecule)
-#     return MoleculeResponse.from_molecule(molecule)
-#
+    :param molecules_repository: The repository to add the molecule to.
+
+    :return MoleculeResponse: containing the details of the added molecule.
+
+    :raises InvalidSmilesException:
+    """
+
+    print(add_molecule_request.dict())
+    molecule = mapper.request_to_model(add_molecule_request)
+    molecules_repository.add(molecule)
+    return mapper.model_to_response(molecule)
+
 #
 # @app.get("/molecules/{molecule_id}",
 #          status_code=status.HTTP_200_OK,
