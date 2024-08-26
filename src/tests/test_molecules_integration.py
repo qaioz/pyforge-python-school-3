@@ -27,30 +27,48 @@ def test_client() -> TestClient:
     return TestClient(app)
 
 
-@pytest.mark.parametrize("molecule", [sample_data.schema_aspirin(),
-                                      sample_data.schema_methane_no_description_custom_id(),
-                                      sample_data.schema_methane_no_description_custom_id()])
+@pytest.mark.parametrize(
+    "molecule",
+    [
+        sample_data.schema_aspirin(),
+        sample_data.schema_methane_no_description_custom_id(),
+        sample_data.schema_methane_no_description_custom_id(),
+    ],
+)
 def test_add_get_molecule(test_client, molecule):
     request_dict = molecule.dict()
     response = test_client.post("/molecules/", json=request_dict)
     response_dict = dict(response.json())
     assert response.status_code == 201
     assert response_dict.get("smiles", None) == request_dict.get("smiles", None)
-    assert response_dict.get("molecule_name", None) == request_dict.get("molecule_name", None)
-    assert response_dict.get("description", None) == request_dict.get("description", None)
+    assert response_dict.get("molecule_name", None) == request_dict.get(
+        "molecule_name", None
+    )
+    assert response_dict.get("description", None) == request_dict.get(
+        "description", None
+    )
     get_request = test_client.get(response_dict["links"]["self"]["href"])
     get_response_dict = dict(get_request.json())
     assert get_request.status_code == 200
     assert get_response_dict.get("smiles", None) == request_dict.get("smiles", None)
-    assert get_response_dict.get("molecule_name", None) == request_dict.get("molecule_name", None)
-    assert get_response_dict.get("description", None) == request_dict.get("description", None)
+    assert get_response_dict.get("molecule_name", None) == request_dict.get(
+        "molecule_name", None
+    )
+    assert get_response_dict.get("description", None) == request_dict.get(
+        "description", None
+    )
     repo.clear()
 
 
 def test_add_molecule_invalid_smiles(test_client):
-    response = test_client.post("/molecules/",
-                                json={"smiles": "SMOIL", "molecule_name": "Aspirin",
-                                      "description": "A common painkiller"})
+    response = test_client.post(
+        "/molecules/",
+        json={
+            "smiles": "SMOIL",
+            "molecule_name": "Aspirin",
+            "description": "A common painkiller",
+        },
+    )
     assert response.status_code == 400
     repo.clear()
 
@@ -65,16 +83,25 @@ def test_update_get_molecule(test_client):
     response = test_client.post("/molecules/", json=sample_data.schema_aspirin().dict())
     response_dict = dict(response.json())
     assert response.status_code == 201
-    update_request = {"molecule_name": "Aspirin_Updated", "description": "A common painkiller",
-                      "smiles": "CC(=O)Oc1ccccc1C(=O)O"}
-    put_response = test_client.put(response_dict["links"]["self"]["href"], json=update_request)
+    update_request = {
+        "molecule_name": "Aspirin_Updated",
+        "description": "A common painkiller",
+        "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+    }
+    put_response = test_client.put(
+        response_dict["links"]["self"]["href"], json=update_request
+    )
     assert put_response.status_code == 200
     get_request = test_client.get(response_dict["links"]["self"]["href"])
     get_response_dict = dict(get_request.json())
     assert get_request.status_code == 200
     assert get_response_dict.get("smiles", None) == update_request.get("smiles", None)
-    assert get_response_dict.get("molecule_name", None) == update_request.get("molecule_name", None)
-    assert get_response_dict.get("description", None) == update_request.get("description", None)
+    assert get_response_dict.get("molecule_name", None) == update_request.get(
+        "molecule_name", None
+    )
+    assert get_response_dict.get("description", None) == update_request.get(
+        "description", None
+    )
     repo.clear()
 
 
@@ -82,22 +109,36 @@ def test_update_molecule_invalid_smiles(test_client):
     response = test_client.post("/molecules/", json=sample_data.schema_aspirin().dict())
     response_dict = dict(response.json())
     assert response.status_code == 201
-    update_request = {"molecule_name": "Aspirin_Updated", "description": "A common painkiller", "smiles": "SMOIL"}
-    put_response = test_client.put(response_dict["links"]["self"]["href"], json=update_request)
+    update_request = {
+        "molecule_name": "Aspirin_Updated",
+        "description": "A common painkiller",
+        "smiles": "SMOIL",
+    }
+    put_response = test_client.put(
+        response_dict["links"]["self"]["href"], json=update_request
+    )
     assert put_response.status_code == 400
     repo.clear()
 
 
 def test_update_molecule_not_found(test_client):
-    update_request = {"molecule_name": "Aspirin_Updated", "smiles": "CC(=O)Oc1ccccc1C(=O)O"}
+    update_request = {
+        "molecule_name": "Aspirin_Updated",
+        "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+    }
     put_response = test_client.put("/molecules/100", json=update_request)
     assert put_response.status_code == 404
     repo.clear()
 
 
-@pytest.mark.parametrize("molecule", [sample_data.schema_aspirin(),
-                                      sample_data.schema_methane_no_description_custom_id(),
-                                      sample_data.schema_methane_no_description_custom_id()])
+@pytest.mark.parametrize(
+    "molecule",
+    [
+        sample_data.schema_aspirin(),
+        sample_data.schema_methane_no_description_custom_id(),
+        sample_data.schema_methane_no_description_custom_id(),
+    ],
+)
 def test_delete_get_molecule(test_client, molecule):
     request_dict = molecule.dict()
     response = test_client.post("/molecules/", json=request_dict)
@@ -129,10 +170,15 @@ def test_get_all(test_client):
     repo.clear()
 
 
-@pytest.mark.parametrize("skip, limit, expected_count", [(0, 0, 8),
-                                                         (3, 0, 5),
-                                                         (3, 3, 3),
-                                                         (5, 0, 3), ])
+@pytest.mark.parametrize(
+    "skip, limit, expected_count",
+    [
+        (0, 0, 8),
+        (3, 0, 5),
+        (3, 3, 3),
+        (5, 0, 3),
+    ],
+)
 def test_get_all_pagination(test_client, skip, limit, expected_count):
     repo.clear()
     mol = sample_data.schema_aspirin()

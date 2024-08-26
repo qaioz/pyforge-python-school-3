@@ -8,27 +8,39 @@ from src.dependencies import get_molecule_repository, get_common_query_parameter
 from src.repository.molecule_repositories import AbstractMoleculeRepository
 from src.mapper import molecule_model_to_response, molecule_request_to_model
 from src.utils import fund_substructures
+
 router = APIRouter()
 
-molecule_repository = Annotated[AbstractMoleculeRepository, Depends(get_molecule_repository)]
+molecule_repository = Annotated[
+    AbstractMoleculeRepository, Depends(get_molecule_repository)
+]
 query_parameters = Annotated[dict, Depends(get_common_query_parameters)]
 
 
-@router.post("/",
-             status_code=status.HTTP_201_CREATED,
-             responses={status.HTTP_201_CREATED: {"description": "Molecule added successfully"},
-                        status.HTTP_400_BAD_REQUEST: {"description": "Smiles string is invalid or missing"}}
-             )
-def add_molecule(add_molecule_request: Annotated[AddMoleculeRequest, Body(description="The request body")],
-                 repository: molecule_repository) -> MoleculeResponse:
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    responses={
+        status.HTTP_201_CREATED: {"description": "Molecule added successfully"},
+        status.HTTP_400_BAD_REQUEST: {
+            "description": "Smiles string is invalid or missing"
+        },
+    },
+)
+def add_molecule(
+        add_molecule_request: Annotated[
+            AddMoleculeRequest, Body(description="The request body")
+        ],
+        repository: molecule_repository,
+) -> MoleculeResponse:
     """
-    Add a new molecule to the repository.
-3
-    :param add_molecule_request: The request body.
+        Add a new molecule to the repository.
+    3
+        :param add_molecule_request: The request body.
 
-    :return MoleculeResponse: containing the details of the added molecule.
+        :return MoleculeResponse: containing the details of the added molecule.
 
-    :raises InvalidSmilesException:
+        :raises InvalidSmilesException:
     """
 
     molecule = molecule_request_to_model(add_molecule_request)
@@ -36,13 +48,20 @@ def add_molecule(add_molecule_request: Annotated[AddMoleculeRequest, Body(descri
     return molecule_model_to_response(molecule)
 
 
-@router.get("/{molecule_id}",
-            status_code=status.HTTP_200_OK,
-            responses={status.HTTP_200_OK: {"description": "Molecule found successfully"},
-                       status.HTTP_404_NOT_FOUND: {"description": "Molecule with the provided ID is not found"}}
-            )
-def get_molecule(molecule_id: Annotated[int, Path(description="The ID of the molecule")],
-                 repository: molecule_repository) -> MoleculeResponse:
+@router.get(
+    "/{molecule_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Molecule found successfully"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Molecule with the provided ID is not found"
+        },
+    },
+)
+def get_molecule(
+        molecule_id: Annotated[int, Path(description="The ID of the molecule")],
+        repository: molecule_repository,
+) -> MoleculeResponse:
     """
     Get the details of a molecule by its ID.
 
@@ -61,14 +80,23 @@ def get_molecule(molecule_id: Annotated[int, Path(description="The ID of the mol
     return molecule_model_to_response(molecule)
 
 
-@router.put("/{molecule_id}",
-            status_code=status.HTTP_200_OK,
-            responses={status.HTTP_200_OK: {"description": "Molecule updated successfully"},
-                       status.HTTP_404_NOT_FOUND: {"description": "Molecule with the provided ID is not found"}})
-def update_molecule(molecule_id: Annotated[int, Path(description="The ID of the molecule")]
-                    , update_molecule_request: Annotated[AddMoleculeRequest, Body(description="The request body")]
-                    , repository: molecule_repository
-                    ) -> MoleculeResponse:
+@router.put(
+    "/{molecule_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Molecule updated successfully"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Molecule with the provided ID is not found"
+        },
+    },
+)
+def update_molecule(
+        molecule_id: Annotated[int, Path(description="The ID of the molecule")],
+        update_molecule_request: Annotated[
+            AddMoleculeRequest, Body(description="The request body")
+        ],
+        repository: molecule_repository,
+) -> MoleculeResponse:
     """
     Update the details of a molecule by its ID.
 
@@ -95,12 +123,20 @@ def update_molecule(molecule_id: Annotated[int, Path(description="The ID of the 
     return molecule_model_to_response(mol)
 
 
-@router.delete("/{molecule_id}",
-               status_code=status.HTTP_200_OK,
-               responses={status.HTTP_200_OK: {"description": "Molecule deleted successfully"},
-                          status.HTTP_404_NOT_FOUND: {"description": "Molecule with the provided ID is not found"}})
-def delete_molecule(molecule_id: Annotated[int, Path(description="The ID of the molecule")],
-                    repository: molecule_repository) -> None:
+@router.delete(
+    "/{molecule_id}",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Molecule deleted successfully"},
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Molecule with the provided ID is not found"
+        },
+    },
+)
+def delete_molecule(
+        molecule_id: Annotated[int, Path(description="The ID of the molecule")],
+        repository: molecule_repository,
+) -> None:
     """
     Delete a molecule by its ID.
 
@@ -118,11 +154,17 @@ def delete_molecule(molecule_id: Annotated[int, Path(description="The ID of the 
     return
 
 
-@router.get("/", status_code=status.HTTP_200_OK,
-            responses={status.HTTP_200_OK: {"description": "Molecules found successfully"},
-                       status.HTTP_400_BAD_REQUEST: {"description": "limit has to be non-negative"}}
-            )
-def list_molecules(params: query_parameters, repository: molecule_repository) -> list[MoleculeResponse]:
+@router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Molecules found successfully"},
+        status.HTTP_400_BAD_REQUEST: {"description": "limit has to be non-negative"},
+    },
+)
+def list_molecules(
+        params: query_parameters, repository: molecule_repository
+) -> list[MoleculeResponse]:
     """
     List all molecules in the repository.
 
@@ -140,18 +182,21 @@ def list_molecules(params: query_parameters, repository: molecule_repository) ->
     if limit == 0:
         limit = len(find_all)
 
-    return [molecule_model_to_response(mol) for mol in find_all[skip:skip + limit]]
+    return [molecule_model_to_response(mol) for mol in find_all[skip: skip + limit]]
 
 
-@router.get("/{molecule_id}/substructures",
-            status_code=status.HTTP_200_OK,
-            responses={status.HTTP_200_OK: {"description": "Molecules found successfully"},
-                       status.HTTP_400_BAD_REQUEST: {"description": "limit has to be non-negative"}
-                       })
+@router.get(
+    "/{molecule_id}/substructures",
+    status_code=status.HTTP_200_OK,
+    responses={
+        status.HTTP_200_OK: {"description": "Molecules found successfully"},
+        status.HTTP_400_BAD_REQUEST: {"description": "limit has to be non-negative"},
+    },
+)
 def get_substructure_search(
         molecule_id: Annotated[int, Path(description="The ID of the molecule")],
         query_params: query_parameters,
-        repository: molecule_repository
+        repository: molecule_repository,
 ) -> list[MoleculeResponse]:
     """
     Find molecules in the that are substructures of given molecule.
@@ -182,8 +227,7 @@ def get_substructure_search(
 
     subs = fund_substructures(mol, mols)
 
-    return [molecule_model_to_response(m) for m in subs][skip:skip + limit]
-
+    return [molecule_model_to_response(m) for m in subs][skip: skip + limit]
 
 # @app.post("/upload_molecules_csv", status_code=status.HTTP_201_CREATED)
 # async def upload_molecules(file: UploadFile):

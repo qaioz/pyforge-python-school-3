@@ -72,8 +72,8 @@ class InMemoryMoleculesRepository(AbstractMoleculeRepository):
 
     def find_all(self) -> list[MoleculeInDB]:
         """
-            Its important that the insertion order is preserved.
-            Inner implementation of dictionary is ordered in that way since Python 3.7+
+        Its important that the insertion order is preserved.
+        Inner implementation of dictionary is ordered in that way since Python 3.7+
         """
         return list(self.molecules.values())
 
@@ -82,7 +82,7 @@ class InMemoryMoleculesRepository(AbstractMoleculeRepository):
 
     def add(self, obj: MoleculeInDB) -> MoleculeInDB:
         """
-            If the provided molecule has non-None molecule_id, it will be replaced with a new one.
+        If the provided molecule has non-None molecule_id, it will be replaced with a new one.
         """
         obj.set_id(self._id_generator.get_next_id())
         self.molecules[obj.get_id()] = obj
@@ -147,8 +147,11 @@ class ExternalPersistentIdGenerator(IDGenerator):
         if response.status != 200:
             raise HTTPClientException(response)
         next_id = response.body["documents"][0]["data"]["next_id"]
-        response = self.__client.update_document(self.__generator_name, response.body["documents"][0]["_document_id"],
-                                                 {"data": {"next_id": next_id + 1}})
+        response = self.__client.update_document(
+            self.__generator_name,
+            response.body["documents"][0]["_document_id"],
+            {"data": {"next_id": next_id + 1}},
+        )
         if response.status != 200:
             raise HTTPClientException(response)
         return next_id
@@ -174,7 +177,9 @@ class HTTPMoleculeRepository(AbstractMoleculeRepository):
         if not self.exists_by_id(obj_id):
             raise RepositoryItemNotFountException(obj_id)
 
-        response = self.__client.get_documents("molecules", field="molecule_id", value=obj_id)
+        response = self.__client.get_documents(
+            "molecules", field="molecule_id", value=obj_id
+        )
         if response.status != 200:
             raise HTTPClientException(response.status)
 
@@ -194,7 +199,9 @@ class HTTPMoleculeRepository(AbstractMoleculeRepository):
         return [MoleculeInDB(**document["data"]) for document in documents]
 
     def exists_by_id(self, obj_id: int) -> bool:
-        response = self.__client.get_documents("molecules", field="molecule_id", value=obj_id)
+        response = self.__client.get_documents(
+            "molecules", field="molecule_id", value=obj_id
+        )
         if response.status != 200:
             raise HTTPClientException(response.status)
         return len(response.body["documents"]) > 0
@@ -210,7 +217,9 @@ class HTTPMoleculeRepository(AbstractMoleculeRepository):
 
     def delete_by_id(self, obj_id: int) -> None:
         # Let's not use exists_by_id because it will result in one more request to the server
-        response = self.__client.get_documents("molecules", field="molecule_id", value=obj_id)
+        response = self.__client.get_documents(
+            "molecules", field="molecule_id", value=obj_id
+        )
         if response.status != 200:
             raise HTTPClientException(response.status)
 

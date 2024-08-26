@@ -1,0 +1,40 @@
+name: Run Tests
+
+on :
+  push:
+    branches:
+#      at the point let's leave it as the current branch for testing reasons
+#      obviously this will be changed to the main branch, but for now let's leave it as is
+      - '**'
+
+jobs:
+  run_tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the code from the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Miniconda and create environment from environment.yml
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: my-rdkit-env
+          environment-file: environment.yml
+          auto-activate-base: false
+
+      - name: Install flake8
+        run: conda run -n my-rdkit-env pip install flake8
+
+      # Run flake8 for static analysis
+      - name: Run flake8
+        run: conda run -n my-rdkit-env flake8 src/
+
+
+      # For some reason i could not activate the environment, so I had to use conda run
+      # I am never using conda environments again, seems terrible when using github actions or containers
+      - name: run tests
+        run: |
+          conda run -n my-rdkit-env pytest src/tests
+

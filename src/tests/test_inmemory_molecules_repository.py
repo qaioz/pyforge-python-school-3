@@ -40,7 +40,13 @@ def test_find_all(repository):
     assert repository.find_all() == [mol1, mol2, mol3]
 
 
-@pytest.mark.parametrize("molecule", [sample_data.molecule_model_aspirin(), sample_data.molecule_model_methane_no_name_no_description()])
+@pytest.mark.parametrize(
+    "molecule",
+    [
+        sample_data.molecule_model_aspirin(),
+        sample_data.molecule_model_methane_no_name_no_description(),
+    ],
+)
 def test_exists_by_id_true(repository, molecule):
     repository.add(molecule)
     assert repository.exists_by_id(molecule.get_id())
@@ -79,4 +85,3 @@ def test_clear(repository):
     repository.add(mol1)
     repository.clear()
     assert repository.find_all() == []
-

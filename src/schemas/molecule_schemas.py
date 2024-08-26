@@ -23,7 +23,7 @@ class AddMoleculeRequest(BaseModel):
                 {
                     "smiles": "CC(=O)Oc1ccccc1C(=O)O",
                     "molecule_name": "Aspirin",
-                    "description": "Aspirin is in a group of medications called salicylates... so on and so forth."
+                    "description": "Aspirin is in a group of medications called salicylates... so on and so forth.",
                 }
             ]
         }
@@ -40,9 +40,8 @@ class MoleculeResponse(AddMoleculeRequest, HATEOASResponse):
                     "molecule_id": 1,
                     "smiles": "CC(=O)Oc1ccccc1C(=O)O",
                     "molecule_name": "Aspirin",
-                    "description": "Aspirin is in a group of medications called salicylates... so on and so forth."
+                    "description": "Aspirin is in a group of medications called salicylates... so on and so forth.",
                 }
             ]
         }
     }
-
