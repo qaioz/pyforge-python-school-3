@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 
 async def log_request_time_middleware(request: Request, call_next):
-    start_time = time.time()
+    start_time = time.perf_counter()
     response = await call_next(request)
-    process_time = time.time() - start_time
+    process_time = time.perf_counter() - start_time
     logger.info(
         f"Request {request.method} {request.url.path} {request.query_params} processed in {process_time:.5f} seconds"
     )

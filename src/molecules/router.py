@@ -222,6 +222,12 @@ def substructure_search_of(
 def upload_molecules(
     file: UploadFile,
     service: Annotated[MoleculeService, Depends(get_molecule_service)],
+    validate_rows: Annotated[
+        bool,
+        Query(
+            description="Validate rows before saving, makes slow. False if a 1000 times faster but unsafe"
+        ),
+    ] = True,
 ):
     """
     Upload a CSV file containing molecules to the repository.
@@ -232,6 +238,8 @@ def upload_molecules(
     """
 
     # Uploaded CSV file is not stored on the server, only the molecules are extracted and stored in the memory.
-
-    res = service.process_csv_file(file)
+    if validate_rows:
+        res = service.process_csv_file(file)
+    else:
+        res = service.bulk_insert_from_file(file)
     return {"number_of_molecules_added": res}

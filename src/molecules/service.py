@@ -220,6 +220,34 @@ class MoleculeService:
 
         return number_of_molecules_added
 
+    def bulk_insert_from_file(self, file: UploadFile):
+        """
+        Bulk insert molecules from a CSV file. Similar to process_csv_file, but no rows are
+        validated and there is no
+
+        //TODO this method is written in a rush, I will test adn revise many things, but works
+        :param file:
+        :return:
+        """
+
+        csv_reader = csv.DictReader(io.TextIOWrapper(file.file, encoding="utf-8"))
+        self.__validate_csv_header_columns(set(csv_reader.fieldnames))
+        molecules = []
+        added_molecules = 0
+        for row in csv_reader:
+            molecules.append({"smiles": row["smiles"], "name": row["name"]})
+            if len(molecules) == 500:
+                with self._session_factory() as session:
+                    res = self._repository.bulk_insert(session, molecules)
+                    session.commit()
+                    added_molecules += res
+                    molecules = []
+        with self._session_factory() as session:
+            res = self._repository.bulk_insert(session, molecules)
+            session.commit()
+            added_molecules += res
+        return added_molecules
+
     def __validate_csv_header_columns(self, columns: set[str]):
         """
         :param columns:

@@ -7,6 +7,7 @@ from src.drugs.model import Drug, DrugMolecule
 from src.repository import SQLAlchemyRepository
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
