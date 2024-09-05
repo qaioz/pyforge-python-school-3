@@ -83,7 +83,6 @@ class MoleculeRepository(SQLAlchemyRepository):
         went wrong.
         """
         data = [{"mass": len(d["smiles"]), **d} for d in data]
-        added_ids = 0
         try:
             session.execute(
                 insert(Molecule), data
