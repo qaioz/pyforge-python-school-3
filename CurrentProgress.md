@@ -153,7 +153,19 @@ page, pageSize, and links will be empty.
 
 ## Drugs
 
+This is functional but not complete. For example update is missing, does not support different functionalities 
+like collective responses, file uploads, and only has basic CRUD operations.  
+
+Tests cover over 90% of the code.
+
 Endpoints and DTO for drugs.
+
+Idea behind drugs is to be able to create a drug with a different combination of molecules, 
+it should be possible to indicate the amount of each molecule in the drug.
+
+Drug should have at least one molecule, and a molecule can be in 0 or more drugs.
+
+Currently, only the basic CRUD operations are supported. UPDATE is missing.
 
 ### Endpoints `/drugs`
 
@@ -168,6 +180,63 @@ Endpoints and DTO for drugs.
         Get a collection of drugs with pagination
 
 ### Drug DTOs
+
+These are the data transfer objects, used for request and response bodies.
+
+
+#### DrugRequest: Request body for creating a drug
+
+Request body for creating a drug. It uses another DTO DrugMoleculeRequest to indicate
+what molecules are in the drug and their quantities. See that DTO below.
+
+    - name: string `drunkenstein`
+    - description: string `Crazy drug for gopniks`
+    - molecules: List[DrugMoleculeRequest] `[
+        {
+            moleculeId: int `1`
+            quantity: float `95`
+            quantityUnit: string `ML`
+        },
+        {
+            moleculeId: int `2`
+            quantity: float `5`
+            quantityUnit: string `ML`
+        }
+    ]`
+
+
+
+#### DrugMoleculeRequest:
+
+This is nevery used directly, it is used in DrugRequest to indicate what molecules are in the drug.
+QuantityUnit is either molar(mol) or volume(ML) or mass(G). This makes sense because different molecules
+can have different units.
+
+    - moleculeId: int `1`
+    - quantity: float `95`
+    - quantityUnit: string `ML`
+
+#### DrugResponse: Response body for a drug
+    
+    - id: int `1`
+    - name: string `drunkenstein`
+    - description: string `Crazy drug for gopniks`
+    - molecules: List[DrugMoleculeResponse] `[
+        {
+            moleculeId: int `1`
+            quantity: float `95`
+            quantityUnit: string `ML`
+        },
+        {
+            moleculeId: int `2`
+            quantity: float `5`
+            quantityUnit: string `ML`
+        }
+    ]`
+    - links: {}
+
+
+
 
 
     
