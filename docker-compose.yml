@@ -20,6 +20,8 @@ services:
     environment:
       SERVER_ID: SERVER-1
       DB_HOST: postgres
+      DEV_MODE: FALSE
+      TEST_MODE: FALSE
     depends_on:
       - postgres
     entrypoint: ["/bin/sh", "-c", "alembic upgrade head && fastapi run src/main.py"]
@@ -29,6 +31,8 @@ services:
     environment:
       SERVER_ID: SERVER-2
       DB_HOST: postgres
+      DEV_MODE: FALSE
+      TEST_MODE: FALSE
     depends_on:
       - postgres
       - web1
