@@ -1,10 +1,12 @@
 from logging.config import fileConfig
+
+from alembic import context
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
-from alembic import context
-from src.database import Base, get_database_url
-from src.molecules.model import *
-from src.drugs.model import *
+
+from src.database import get_database_url
+from src.molecules.model import Molecule
+from src.drugs.model import Drug, DrugMolecule, Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

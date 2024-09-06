@@ -71,6 +71,8 @@ def upgrade() -> None:
         ),
         sa.PrimaryKeyConstraint("drug_id", "molecule_id"),
     )
+
+    # this is not generated automatically
     op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
     # ### end Alembic commands ###
 
@@ -80,4 +82,10 @@ def downgrade() -> None:
     op.drop_table("drug_molecule")
     op.drop_table("molecules")
     op.drop_table("drugs")
+
+    # this is not generated automatically
+    op.execute("DROP EXTENSION IF EXISTS pg_trgm;")
+
+    # drop enum manually
+    op.execute("DROP TYPE IF EXISTS quantityunit;")
     # ### end Alembic commands ###

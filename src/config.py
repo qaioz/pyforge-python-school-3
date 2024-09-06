@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     DEV_DB_URL: str
     CONTEXT_PATH: str
 
+    REDIS_HOST: str
+    REDIS_PORT: int
+
     model_config = SettingsConfigDict(
         env_file=".env",
         # env_file="/home/gaioz/quantori/pyforge-python-school-3/.env",

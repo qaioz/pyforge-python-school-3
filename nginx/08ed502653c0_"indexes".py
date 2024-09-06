@@ -20,14 +20,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
     op.execute(
-        "CREATE INDEX pg_trgm_on_name_idx ON molecules USING gist (name gist_trgm_ops);"
+        "CREATE INDEX molecules_name_pg_trgm_idx ON molecules USING gist (name gist_trgm_ops);"
     )
     op.execute("CREATE INDEX molecules_mass_idx ON molecules (mass);")
 
 
 def downgrade() -> None:
-    op.execute("DROP INDEX pg_trgm_on_name_idx;")
-    op.execute("DROP EXTENSION IF EXISTS pg_trgm;")
+    op.execute("DROP INDEX molecules_name_pg_trgm_idx;")
     op.execute("DROP INDEX molecules_mass_idx;")

@@ -16,11 +16,11 @@ class MoleculeRepository(SQLAlchemyRepository):
         super().__init__(Molecule)
 
     def find_all(
-            self,
-            session: Session,
-            page=0,
-            page_size=1000,
-            search_params: SearchParams = None,
+        self,
+        session: Session,
+        page=0,
+        page_size=1000,
+        search_params: SearchParams = None,
     ):
         """
         If name is provided, then fuzzy search with trigrams is performed, results are ordered by similarity,
@@ -84,9 +84,7 @@ class MoleculeRepository(SQLAlchemyRepository):
         """
         data = [{"mass": len(d["smiles"]), **d} for d in data]
         try:
-            session.execute(
-                insert(Molecule), data
-            )
+            session.execute(insert(Molecule), data)
             session.flush()
         except Exception as e:
             session.rollback()
