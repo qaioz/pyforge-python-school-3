@@ -28,6 +28,7 @@ from src.molecules.utils import (
 )
 from src.database import get_session_factory
 from src.molecules import mapper
+from src.redis import RedisCacheService, get_redis_cache_service
 from src.schema import MoleculeUpdateRequest
 
 logger = logging.getLogger(__name__)
@@ -36,9 +37,15 @@ logger = logging.getLogger(__name__)
 class MoleculeService:
     required_columns = {"smiles", "name"}
 
-    def __init__(self, repository: MoleculeRepository, session_factory):
+    def __init__(
+            self,
+            repository: MoleculeRepository,
+            session_factory,
+            redis_cache_service: RedisCacheService,
+    ):
         self._repository = repository
         self._session_factory = session_factory
+        self._redis = redis_cache_service
 
     def find_by_id(self, obj_id: int):
         """
@@ -101,7 +108,7 @@ class MoleculeService:
             return ans
 
     def find_all(
-        self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
+            self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
     ):
         """
         Find all molecules in the database. Can be paginated. Default page size is 1000.
@@ -111,13 +118,26 @@ class MoleculeService:
         :param page_size: Items per page, default is 1000
         :return: List of all molecules
         """
+
+        key = self._redis_key("find_all", page=page, page_size=page_size, **search_params.model_dump())
+        cached = self._redis.get_json(key)
+        if cached:
+            logger.info(f"Cache hit for key: {key}")
+            return cached
+
+        logger.info(f"Cache miss for key: {key}")
+
         with self._session_factory() as session:
             molecules = self._repository.find_all(
                 session, page, page_size, search_params
             )
 
-            return [mapper.model_to_response(mol) for mol in molecules]
 
+            res = [mapper.model_to_response(mol) for mol in molecules]
+
+            self._redis.set_json(key, res[0].model_dump_json())
+
+            return res
     def delete(self, obj_id: int) -> bool:
         """
         Delete a molecule with the given id. If the molecule does not exist, raise an exception.
@@ -135,7 +155,7 @@ class MoleculeService:
             return ans
 
     def get_substructures(
-        self, smiles: str, limit: int = 1000
+            self, smiles: str, limit: int = 1000
     ) -> list[MoleculeResponse]:
         """
         Find all molecules that are substructures of the given smiles.
@@ -158,7 +178,7 @@ class MoleculeService:
                     break
 
     def get_superstructures(
-        self, smiles: str, limit: int = 1000
+            self, smiles: str, limit: int = 1000
     ) -> list[MoleculeResponse]:
         """
         Find all the molecules that this molecule is a substructure of.
@@ -288,7 +308,16 @@ class MoleculeService:
                     yield molecule
                 page += 1
 
+    @staticmethod
+    def _redis_key(path, **kwargs):
+        # sorted args, filter out None values
+        sorted_args = sorted([(k, v) for k, v in kwargs.items() if v is not None])
+        return f"molecules:{path}:" + ":".join([f"{v}" for k, v in sorted_args])
+
 
 @lru_cache
 def get_molecule_service():
-    return MoleculeService(get_molecule_repository(), get_session_factory())
+    return MoleculeService(get_molecule_repository(), get_session_factory(), get_redis_cache_service())
+
+
+

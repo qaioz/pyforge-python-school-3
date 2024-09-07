@@ -15,7 +15,6 @@ from src.schema import (
     Link,
 )
 from src.molecules.service import MoleculeService
-from src.redis import get_redis_client
 
 router = APIRouter()
 
