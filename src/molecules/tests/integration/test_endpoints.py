@@ -24,7 +24,7 @@ engine = create_engine(
 )
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 molecule_repository = MoleculeRepository()
-molecule_service = MoleculeService(molecule_repository, session_factory)
+molecule_service = MoleculeService(molecule_repository, session_factory, None)
 
 client = TestClient(app)
 app.dependency_overrides[get_molecule_service] = lambda: molecule_service

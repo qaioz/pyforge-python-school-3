@@ -119,25 +119,25 @@ class MoleculeService:
         :return: List of all molecules
         """
 
-        key = self._redis_key("find_all", page=page, page_size=page_size, **search_params.model_dump())
-        cached = self._redis.get_json(key)
-        if cached:
-            logger.info(f"Cache hit for key: {key}")
-            return cached
+        # key = self._redis_key("find_all", page=page, page_size=page_size, **search_params.model_dump())
+        # cached = self._redis.get_json(key)
+        # if cached:
+        #     logger.info(f"Cache hit for key: {key}")
+        #     return cached
 
-        logger.info(f"Cache miss for key: {key}")
+        # logger.info(f"Cache miss for key: {key}")
 
         with self._session_factory() as session:
             molecules = self._repository.find_all(
                 session, page, page_size, search_params
             )
 
-
             res = [mapper.model_to_response(mol) for mol in molecules]
 
-            self._redis.set_json(key, res[0].model_dump_json())
+            # self._redis.set_json(key, res[0].model_dump_json())
 
             return res
+
     def delete(self, obj_id: int) -> bool:
         """
         Delete a molecule with the given id. If the molecule does not exist, raise an exception.
@@ -318,6 +318,3 @@ class MoleculeService:
 @lru_cache
 def get_molecule_service():
     return MoleculeService(get_molecule_repository(), get_session_factory(), get_redis_cache_service())
-
-
-
