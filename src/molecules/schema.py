@@ -1,10 +1,9 @@
-import datetime
 from typing import Annotated, Literal
 from black.linegen import Optional
 from pydantic import BaseModel, Field, field_validator
 from src.molecules.exception import InvalidSmilesException
 from src.molecules.utils import is_valid_smiles
-from src.schema import BaseResponse, Link
+from src.schema import Link
 
 
 class MoleculeRequest(BaseModel):
@@ -36,16 +35,16 @@ class MoleculeRequest(BaseModel):
     }
 
 
-class MoleculeResponse(BaseResponse):
+class MoleculeResponse(BaseModel):
     molecule_id: Annotated[int, Field(description="Unique identifier for the molecule")]
     smiles: Annotated[str, Field(description="SMILES string of the molecule")]
     name: Annotated[Optional[str], Field(description="Name of the molecule")]
     mass: Annotated[float, Field(description="Molecular mass of the molecule")]
     created_at: Annotated[
-        datetime.datetime, Field(description="Timestamp when the molecule was created")
+        str, Field(description="Timestamp when the molecule was created")
     ] = None
     updated_at: Annotated[
-        datetime.datetime, Field(description="Timestamp when the molecule was updated")
+        str, Field(description="Timestamp when the molecule was updated")
     ] = None
     links: Annotated[
         dict[str, Link],

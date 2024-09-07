@@ -62,8 +62,8 @@ def model_to_response(molecule):
         smiles=molecule.smiles,
         name=molecule.name,
         mass=molecule.mass,
-        created_at=molecule.created_at,
-        updated_at=molecule.updated_at,
+        created_at=molecule.created_at.isoformat() if molecule.created_at else None,
+        updated_at=molecule.updated_at.isoformat() if molecule.updated_at else None,
         links=generate_links_from_id_and_smiles(molecule.molecule_id, molecule.smiles),
     )
 

@@ -19,7 +19,8 @@ from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,
     SearchParams,
-    get_search_params, MoleculeCollectionResponse,
+    get_search_params,
+    MoleculeCollectionResponse,
 )
 from src.molecules.utils import (
     get_chem_molecule_from_smiles_or_raise_exception,
@@ -38,10 +39,10 @@ class MoleculeService:
     required_columns = {"smiles", "name"}
 
     def __init__(
-            self,
-            repository: MoleculeRepository,
-            session_factory,
-            redis_cache_service: RedisCacheService,
+        self,
+        repository: MoleculeRepository,
+        session_factory,
+        redis_cache_service: RedisCacheService,
     ):
         self._repository = repository
         self._session_factory = session_factory
@@ -108,7 +109,7 @@ class MoleculeService:
             return ans
 
     def find_all(
-            self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
+        self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
     ):
         """
         Find all molecules in the database. Can be paginated. Default page size is 1000.
@@ -119,7 +120,9 @@ class MoleculeService:
         :return: List of all molecules
         """
 
-        key = self._redis_key("find_all", page=page, page_size=page_size, **search_params.model_dump())
+        key = self._redis_key(
+            "find_all", page=page, page_size=page_size, **search_params.model_dump()
+        )
         cached = self._redis.get_json(key)
         if cached:
             logger.info(f"Cache hit for key: {key}")
@@ -161,9 +164,9 @@ class MoleculeService:
 
             mod = res.model_dump()
 
-            for mol in mod["data"]:
-                mol["created_at"] = mol["created_at"].isoformat()
-                mol["updated_at"] = mol["updated_at"].isoformat()
+            # for mol in mod["data"]:
+            #     mol["created_at"] = mol["created_at"].isoformat()
+            #     mol["updated_at"] = mol["updated_at"].isoformat()
 
             self._redis.set_json(key, mod)
 
@@ -186,7 +189,7 @@ class MoleculeService:
             return ans
 
     def get_substructures(
-            self, smiles: str, limit: int = 1000
+        self, smiles: str, limit: int = 1000
     ) -> list[MoleculeResponse]:
         """
         Find all molecules that are substructures of the given smiles.
@@ -209,7 +212,7 @@ class MoleculeService:
                     break
 
     def get_superstructures(
-            self, smiles: str, limit: int = 1000
+        self, smiles: str, limit: int = 1000
     ) -> list[MoleculeResponse]:
         """
         Find all the molecules that this molecule is a substructure of.
@@ -348,4 +351,6 @@ class MoleculeService:
 
 @lru_cache
 def get_molecule_service():
-    return MoleculeService(get_molecule_repository(), get_session_factory(), get_redis_cache_service())
+    return MoleculeService(
+        get_molecule_repository(), get_session_factory(), get_redis_cache_service()
+    )

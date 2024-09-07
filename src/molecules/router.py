@@ -12,7 +12,6 @@ from src.schema import (
     PaginationQueryParams,
     get_pagination_query_params,
     MoleculeUpdateRequest,
-    Link,
 )
 from src.molecules.service import MoleculeService
 
@@ -84,8 +83,6 @@ def get_molecules(
     """
 
     return service.find_all(pagination.page, pagination.page_size, search_params)
-
-
 
 
 @router.patch(

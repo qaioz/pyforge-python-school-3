@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -16,8 +17,10 @@ session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 repository = DrugRepository()
 service = DrugService(repository, session_factory)
 
+mock_redis = Mock()
+mock_redis.get.return_value = None
 molecule_repository = MoleculeRepository()
-molecule_service = MoleculeService(molecule_repository, session_factory)
+molecule_service = MoleculeService(molecule_repository, session_factory, mock_redis)
 
 
 @pytest.fixture

@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
@@ -18,8 +19,11 @@ session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 drug_repository = DrugRepository()
 drug_service = DrugService(drug_repository, session_factory)
 
+mock_redis = Mock()
+mock_redis.get.return_value = None
+
 mol_repository = MoleculeRepository()
-molecule_service = MoleculeService(mol_repository, session_factory)
+molecule_service = MoleculeService(mol_repository, session_factory, mock_redis)
 
 test_client = TestClient(app)
 
