@@ -57,11 +57,20 @@ class MoleculeService:
         :return: found molecule
         :raises UnknownIdentifierException: if the molecule with the given id does not exist
         """
+
+        key = self._redis_key("find_by_id", obj_id=obj_id)
+        cached = self._redis.get_json(key)
+        if cached:
+            logger.info(f"Cache hit for key: {key}")
+            return MoleculeResponse.model_validate(cached)
+
         with self._session_factory() as session:
             mol = self._repository.find_by_id(obj_id, session)
             if mol is None:
                 raise UnknownIdentifierException(obj_id)
-            return mapper.model_to_response(mol)
+            ans = mapper.model_to_response(mol)
+            self._redis.set_json(key, ans.model_dump())
+            return ans
 
     def save(self, molecule_request: MoleculeRequest):
         """
@@ -190,7 +199,7 @@ class MoleculeService:
 
     def get_substructures(
         self, smiles: str, limit: int = 1000
-    ) -> list[MoleculeResponse]:
+    ) -> MoleculeCollectionResponse:
         """
         Find all molecules that are substructures of the given smiles.
 
@@ -201,19 +210,41 @@ class MoleculeService:
         """
 
         mol = get_chem_molecule_from_smiles_or_raise_exception(smiles)
+
+        key = self._redis_key("substructures", smiles=smiles, limit=limit)
+
+        cached = self._redis.get_json(key)
+        if cached:
+            logger.info(f"Cache hit for key: {key}")
+            return MoleculeCollectionResponse.model_validate(cached)
+
+        data = []
         find_all = self.__iterate_on_find_all()
         count = 0
-
         for molecule in find_all:
             if mol.HasSubstructMatch(get_chem_service().get_chem(molecule.smiles)):
-                yield mapper.model_to_response(molecule)
+                data.append(mapper.model_to_response(molecule))
                 count += 1
                 if limit is not None and count >= limit:
                     break
 
+        res = MoleculeCollectionResponse.model_validate(
+            {
+                "total": len(data),
+                "page": 0,
+                "page_size": limit,
+                "data": data,
+                "links": {},
+            }
+        )
+
+        self._redis.set_json(key, res.model_dump())
+
+        return res
+
     def get_superstructures(
         self, smiles: str, limit: int = 1000
-    ) -> list[MoleculeResponse]:
+    ) -> MoleculeCollectionResponse:
         """
         Find all the molecules that this molecule is a substructure of.
 
@@ -224,15 +255,39 @@ class MoleculeService:
         """
 
         mol = get_chem_molecule_from_smiles_or_raise_exception(smiles)
+
+        key = self._redis_key("superstructures", smiles=smiles, limit=limit)
+
+        cached = self._redis.get_json(key)
+        if cached:
+            logger.info(f"Cache hit for key: {key}")
+            return MoleculeCollectionResponse.model_validate(cached)
+
+        data = []
+
         find_all = self.__iterate_on_find_all()
         count = 0
 
         for molecule in find_all:
             if get_chem_service().get_chem(molecule.smiles).HasSubstructMatch(mol):
-                yield mapper.model_to_response(molecule)
+                data.append(mapper.model_to_response(molecule))
                 count += 1
                 if limit is not None and count >= limit:
                     break
+
+        res = MoleculeCollectionResponse.model_validate(
+            {
+                "total": len(data),
+                "page": 0,
+                "page_size": limit,
+                "data": data,
+                "links": {},
+            }
+        )
+
+        self._redis.set_json(key, res.model_dump())
+
+        return res
 
     def process_csv_file(self, file: UploadFile):
         """

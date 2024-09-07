@@ -163,7 +163,7 @@ def test_substructures(i, init_db):
         f"/molecules/search/substructures?smiles={responses[i]['smiles']}"
     )
     assert response.status_code == 200
-    response_json = response.json()
+    response_json = response.json()["data"]
     # every alkane up to i should be in the response
     for j in range(1, i + 1):
         assert validate_response_dict_for_ith_alkane(response_json[j], j + 1)
@@ -176,7 +176,7 @@ def test_superstructures(i, init_db):
         f"/molecules/search/superstructures?smiles={responses[i - 1]['smiles']}"
     )
     assert response.status_code == 200
-    response_json = response.json()
+    response_json = response.json()["data"]
     # every alkane from i should be in the response
     for j in range(i, 20):
         assert validate_response_dict_for_ith_alkane(response_json[j - i], j)
