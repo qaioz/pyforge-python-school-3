@@ -83,32 +83,9 @@ def get_molecules(
 
     """
 
-    data = service.find_all(pagination.page, pagination.page_size, search_params)
+    return service.find_all(pagination.page, pagination.page_size, search_params)
 
-    return MoleculeCollectionResponse.model_validate(
-        {
-            "total": len(data),
-            "page": pagination.page,
-            "page_size": pagination.page_size,
-            "data": data,
-            "links": {
-                "next_page": Link.model_validate(
-                    {
-                        "href": f"/molecules?page={pagination.page + 1}&pageSize={pagination.page_size}",
-                        "rel": "nextPage",
-                        "type": "GET",
-                    }
-                ),
-                "prev_page": Link.model_validate(
-                    {
-                        "href": f"/molecules?page={max(0, pagination.page - 1)}&pageSize={pagination.page_size}",
-                        "rel": "prevPage",
-                        "type": "GET",
-                    }
-                ),
-            },
-        }
-    )
+
 
 
 @router.patch(

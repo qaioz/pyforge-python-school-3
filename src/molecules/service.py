@@ -19,7 +19,7 @@ from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,
     SearchParams,
-    get_search_params,
+    get_search_params, MoleculeCollectionResponse,
 )
 from src.molecules.utils import (
     get_chem_molecule_from_smiles_or_raise_exception,
@@ -29,7 +29,7 @@ from src.molecules.utils import (
 from src.database import get_session_factory
 from src.molecules import mapper
 from src.redis import RedisCacheService, get_redis_cache_service
-from src.schema import MoleculeUpdateRequest
+from src.schema import MoleculeUpdateRequest, Link
 
 logger = logging.getLogger(__name__)
 
@@ -119,22 +119,53 @@ class MoleculeService:
         :return: List of all molecules
         """
 
-        # key = self._redis_key("find_all", page=page, page_size=page_size, **search_params.model_dump())
-        # cached = self._redis.get_json(key)
-        # if cached:
-        #     logger.info(f"Cache hit for key: {key}")
-        #     return cached
+        key = self._redis_key("find_all", page=page, page_size=page_size, **search_params.model_dump())
+        cached = self._redis.get_json(key)
+        if cached:
+            logger.info(f"Cache hit for key: {key}")
+            return MoleculeCollectionResponse.model_validate(cached)
 
-        # logger.info(f"Cache miss for key: {key}")
+        logger.info(f"Cache miss for key: {key}")
 
         with self._session_factory() as session:
             molecules = self._repository.find_all(
                 session, page, page_size, search_params
             )
 
-            res = [mapper.model_to_response(mol) for mol in molecules]
+            data = [mapper.model_to_response(mol) for mol in molecules]
 
-            # self._redis.set_json(key, res[0].model_dump_json())
+            res = MoleculeCollectionResponse.model_validate(
+                {
+                    "total": len(data),
+                    "page": page,
+                    "page_size": page_size,
+                    "data": data,
+                    "links": {
+                        "next_page": Link.model_validate(
+                            {
+                                "href": f"/molecules?page={page + 1}&pageSize={page_size}",
+                                "rel": "nextPage",
+                                "type": "GET",
+                            }
+                        ),
+                        "prev_page": Link.model_validate(
+                            {
+                                "href": f"/molecules?page={max(0, page - 1)}&pageSize={page_size}",
+                                "rel": "prevPage",
+                                "type": "GET",
+                            }
+                        ),
+                    },
+                }
+            )
+
+            mod = res.model_dump()
+
+            for mol in mod["data"]:
+                mol["created_at"] = mol["created_at"].isoformat()
+                mol["updated_at"] = mol["updated_at"].isoformat()
+
+            self._redis.set_json(key, mod)
 
             return res
 

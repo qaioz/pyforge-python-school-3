@@ -1,6 +1,7 @@
 import os
 import random
 import pytest
+import unittest.mock as mock
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -17,6 +18,7 @@ from src.molecules.tests.testing_utils import (
     heptane_isomer_requests,
     get_imaginary_alkane_requests,
 )
+from src.redis import RedisCacheService
 
 # engine = create_engine("postgresql://user:password@localhost:5432/db_test")
 engine = create_engine(
@@ -24,7 +26,10 @@ engine = create_engine(
 )
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 molecule_repository = MoleculeRepository()
-molecule_service = MoleculeService(molecule_repository, session_factory, None)
+
+mocked_redis_client = mock.Mock(spec=RedisCacheService)
+mocked_redis_client.get_json.return_value = None
+molecule_service = MoleculeService(molecule_repository, session_factory, mocked_redis_client)
 
 client = TestClient(app)
 app.dependency_overrides[get_molecule_service] = lambda: molecule_service
