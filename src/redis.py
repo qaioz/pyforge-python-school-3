@@ -19,7 +19,6 @@ class RedisCacheService:
         self.redis_client.json().set(key, ".", value)
 
     def get_json(self, key) -> dict:
-        print(key)
         return self.redis_client.json().get(key, ".")
 
 

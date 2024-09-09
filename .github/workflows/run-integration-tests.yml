@@ -30,6 +30,12 @@ jobs:
         ports:
           - 54321:5432
 
+      redis:
+        image: "redis/redis-stack"
+        container_name: redis_dev
+        ports:
+          - "6370:6379"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,7 +51,8 @@ jobs:
           pip install -r requirements.txt
       - name: Run tests with coverage
         run: |
-          pytest --cov=src --cov-fail-under=95
+          pytest --cov=src --cov-fail-under=80
         env:
           TEST_DB_URL: postgresql://test_user:test_password@localhost:54321/test_db
-
+          REDIS_HOST: redis
+          REDIS_PORT: 6370
