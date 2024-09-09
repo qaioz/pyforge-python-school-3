@@ -24,18 +24,20 @@ async def log_request_time_middleware(request: Request, call_next):
 
 async def caching_middleware(request: Request, call_next):
     # this is a dictionary of endpoints that should be cached with their respective expiration time
-    cached_endpoints = {"**/molecules/**": 60 * 60 * 24 * 7}
+    cached_endpoints = {
+        "**/molecules/**": 60 * 60 * 24 * 7
+    }
 
     if request.method != "GET":
         logger.info(
-            f"Request {request.url.path} is not cached because it is not a GET request"
+            f"Request is not cached because it is not a GET request"
         )
         return await call_next(request)
 
     if not any(
         fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
     ):
-        logger.info(f"Request {request.url.path} is not cached")
+        logger.info(f"URL {request.url.path} is not cached")
         return await call_next(request)
 
     url = request.url.path
@@ -56,6 +58,10 @@ async def caching_middleware(request: Request, call_next):
         logger.info(f"cache miss for {cache_key}")
 
     response = await call_next(request)
+
+    if response.status_code != 200:
+        logger.info(f"Response for {cache_key} is not 200, not caching")
+        return response
 
     # Looks like fastapi always returns a StreamingResponse for responses that are not JSONResponse
     # I could not find exact documentation on this, but this is what I observed
@@ -85,5 +91,6 @@ async def caching_middleware(request: Request, call_next):
 
 
 def register_middlewares(app):
-    app.add_middleware(BaseHTTPMiddleware, dispatch=log_request_time_middleware)
     app.add_middleware(BaseHTTPMiddleware, dispatch=caching_middleware)
+    # request time logging middleware should be added last
+    app.add_middleware(BaseHTTPMiddleware, dispatch=log_request_time_middleware)
