@@ -17,7 +17,6 @@ from src.molecules.repository import (
 )
 from src.molecules.schema import (
     MoleculeRequest,
-    MoleculeResponse,
     SearchParams,
     get_search_params,
     MoleculeCollectionResponse,

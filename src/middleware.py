@@ -32,7 +32,7 @@ async def caching_middleware(request: Request, call_next):
 
     if request.method != "GET":
         logger.info(
-            f"Request is not cached because it is not a GET request"
+            "Request is not cached because it is not a GET request"
         )
         return await call_next(request)
 

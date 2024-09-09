@@ -1,6 +1,6 @@
-import inspect
+
 from typing import Annotated
-from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter, Header
+from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter
 from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,
