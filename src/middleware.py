@@ -11,6 +11,8 @@ import fnmatch
 
 logger = logging.getLogger(__name__)
 
+CACHED_CONTENT_LENGTH_LIMIT = 1024 * 1024
+
 
 async def log_request_time_middleware(request: Request, call_next):
     start_time = time.perf_counter()
@@ -34,6 +36,7 @@ async def caching_middleware(request: Request, call_next):
         )
         return await call_next(request)
 
+    # fnmatch is used to match the request URL with the cached endpoints, it supports unix shell-style wildcards
     if not any(
         fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
     ):
@@ -41,6 +44,9 @@ async def caching_middleware(request: Request, call_next):
         return await call_next(request)
 
     url = request.url.path
+
+    # sorting the query params is super important because the order of query params does not matter
+    # if we do not do this, the cache key will be different for the same URL with different query params
     params = sorted(request.query_params.items())
     cache_key = url + "?" + "&".join([f"{k}={v}" for k, v in params])
 
@@ -71,6 +77,22 @@ async def caching_middleware(request: Request, call_next):
         logger.info(f"Response for {cache_key} is not a StreamingResponse, not caching")
         return response
 
+    # What I am doing I am reading the content of the StreamingResponse and then converting it to JSONResponse
+    # This can cause several concerns.
+    # 1. If the response is too large, it will consume a lot of memory
+    # 2. There is a possibility of mismatch in the response content-length header and the actual content length
+
+    # I had the second problem and I just removed the content-length header from the response headers, fortunately
+    # fastapi automatically recalculates the content-length header
+
+    # For the first problem, I think you can not get away with caching and not buffering the response,
+    # what you can do is to limit the size of the response that you are caching, by reading the response content-length
+
+    # This is just and arbitrary limit, can be changed according to the memory available
+    if int(response.headers.get("content-length", 0)) > CACHED_CONTENT_LENGTH_LIMIT:
+        logger.info(f"Response for {cache_key} is too large, not caching")
+        return response
+
     response_body = b"".join([chunk async for chunk in response.body_iterator])
     response_json = json.loads(response_body.decode())
     headers = dict(response.headers)
@@ -84,7 +106,8 @@ async def caching_middleware(request: Request, call_next):
     }
     get_redis_cache_service().set_json(cache_key, cache_data)
 
-    # Return the original response
+    # Remember, the reason we are converting the StreamingResponse to JSONResponse is because the StreamingResponse is
+    # already consumed because we read it to cache it
     return JSONResponse(
         content=response_json, status_code=response.status_code, headers=headers
     )
