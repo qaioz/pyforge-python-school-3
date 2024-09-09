@@ -24,17 +24,18 @@ async def log_request_time_middleware(request: Request, call_next):
 
 async def caching_middleware(request: Request, call_next):
     # this is a dictionary of endpoints that should be cached with their respective expiration time
-    cached_endpoints = {
-        '**/molecules/**': 60 * 60 * 24 * 7
-    }
-
-    if not any(fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints):
-        logger.info(f"Request {request.url.path} is not cached")
-        return await call_next(request)
-
+    cached_endpoints = {"**/molecules/**": 60 * 60 * 24 * 7}
 
     if request.method != "GET":
-        logger.info(f"Request {request.url.path} is not cached because it is not a GET request")
+        logger.info(
+            f"Request {request.url.path} is not cached because it is not a GET request"
+        )
+        return await call_next(request)
+
+    if not any(
+        fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
+    ):
+        logger.info(f"Request {request.url.path} is not cached")
         return await call_next(request)
 
     url = request.url.path
@@ -44,10 +45,15 @@ async def caching_middleware(request: Request, call_next):
     cached_response = get_redis_cache_service().get_json(cache_key)
     if cached_response:
         logger.info(f"cache hit for {cache_key}")
-        return JSONResponse(content=cached_response['body'], status_code=cached_response['status_code'],
-                            headers=cached_response['headers'])
-
-    logger.info(f"cache miss for {cache_key}")
+        if "no-cache" not in request.headers.get("cache-control", {}):
+            return JSONResponse(
+                content=cached_response["body"],
+                status_code=cached_response["status_code"],
+                headers=cached_response["headers"],
+            )
+        logger.info(f"no-cache header found, revalidating cache for {cache_key}")
+    else:
+        logger.info(f"cache miss for {cache_key}")
 
     response = await call_next(request)
 
@@ -66,14 +72,16 @@ async def caching_middleware(request: Request, call_next):
 
     # Cache the response
     cache_data = {
-        'body': response_json,
-        'status_code': response.status_code,
-        'headers': headers
+        "body": response_json,
+        "status_code": response.status_code,
+        "headers": headers,
     }
     get_redis_cache_service().set_json(cache_key, cache_data)
 
     # Return the original response
-    return JSONResponse(content=response_json, status_code=response.status_code, headers=headers)
+    return JSONResponse(
+        content=response_json, status_code=response.status_code, headers=headers
+    )
 
 
 def register_middlewares(app):

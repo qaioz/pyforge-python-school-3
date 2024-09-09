@@ -108,7 +108,9 @@ def test_save_duplicate_smiles(i, init_db):
 def test_find_by_id(i, init_db):
     response = post_consecutive_alkanes(i, 1)[0]
     response_id = response["molecule_id"]
-    response = client.get(f"/molecules/{response_id}")
+    response = client.get(
+        f"/molecules/{response_id}", headers={"cache-control": "no-cache"}
+    )
     assert response.status_code == 200
     assert validate_response_dict_for_ith_alkane(response.json(), i)
 

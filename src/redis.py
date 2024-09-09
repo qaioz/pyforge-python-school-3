@@ -29,5 +29,3 @@ def get_redis_client():
 @lru_cache
 def get_redis_cache_service():
     return RedisCacheService(get_redis_client())
-
-
