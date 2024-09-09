@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
 
+    REDIS_TEST_PORT: int
+
     model_config = SettingsConfigDict(
         env_file=".env",
         # env_file="/home/gaioz/quantori/pyforge-python-school-3/.env",

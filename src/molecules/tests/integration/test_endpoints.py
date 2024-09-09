@@ -18,9 +18,7 @@ from src.molecules.tests.testing_utils import (
     heptane_isomer_requests,
     get_imaginary_alkane_requests,
 )
-# from src.redis import RedisCacheService
 
-# engine = create_engine("postgresql://user:password@localhost:5432/db_test")
 engine = create_engine(
     get_settings().TEST_DB_URL,
 )
