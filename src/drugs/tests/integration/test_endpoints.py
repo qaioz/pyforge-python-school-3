@@ -23,7 +23,7 @@ mock_redis = Mock()
 mock_redis.get.return_value = None
 
 mol_repository = MoleculeRepository()
-molecule_service = MoleculeService(mol_repository, session_factory, mock_redis)
+molecule_service = MoleculeService(mol_repository, session_factory)
 
 test_client = TestClient(app)
 

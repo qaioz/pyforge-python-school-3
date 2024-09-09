@@ -2,11 +2,9 @@ import json
 import time
 from fastapi import Request
 import logging
-
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import StreamingResponse, JSONResponse
-
-from src.redis import get_redis_cache_service
+from src.redis import get_redis_cache_service, get_redis_client
 import fnmatch
 
 logger = logging.getLogger(__name__)
@@ -24,7 +22,19 @@ async def log_request_time_middleware(request: Request, call_next):
     return response
 
 
-async def caching_middleware(request: Request, call_next):
+async def caching_middleware(
+    request: Request,
+    call_next,
+):
+
+    # I could not find a way to inject the redis client into the middleware, so I am accessing it from the function
+    # All of the dependencies are singletons, so it should not be a problem
+    # I with there was a dependency injection container library like in .NET or Spring, but it is not widely used in
+    # fastapi community for some reason as far as I can see
+    # when the app is running in DEV or TEST mode, it will have a different redis client, get settings has an
+    # variable that is set to DEV or TEST mode
+    print(get_redis_client())
+    redis = get_redis_cache_service()
 
     # this is a dictionary of endpoints that should be cached with their respective expiration time
     cached_endpoints = {"**/molecules/**": 60 * 60 * 24 * 7}
@@ -45,11 +55,17 @@ async def caching_middleware(request: Request, call_next):
     # sorting the query params is super important because the order of query params does not matter
     # if we do not do this, the cache key will be different for the same URL with different query params
     params = sorted(request.query_params.items())
-    cache_key = url + "?" + "&".join([f"{k}={v}" for k, v in params]) if len(params) > 0 else url
+    cache_key = (
+        url + "?" + "&".join([f"{k}={v}" for k, v in params])
+        if len(params) > 0
+        else url
+    )
 
-    logger.info(f"cache key: {cache_key} is equal to molecules/10  {cache_key == '/molecules/10'}")
+    logger.info(
+        f"cache key: {cache_key} is equal to molecules/10  {cache_key == '/molecules/10'}"
+    )
 
-    cached_response = get_redis_cache_service().get_json(cache_key)
+    cached_response = redis.get_json(cache_key)
     if cached_response:
         logger.info(f"cache hit for {cache_key}")
         if "no-cache" not in request.headers.get("cache-control", {}):
@@ -103,7 +119,7 @@ async def caching_middleware(request: Request, call_next):
         "status_code": response.status_code,
         "headers": headers,
     }
-    get_redis_cache_service().set_json(cache_key, cache_data)
+    redis.set_json(cache_key, cache_data)
     logger.info(f"Response for {cache_key} is cached")
 
     # Remember, the reason we are converting the StreamingResponse to JSONResponse is because the StreamingResponse is

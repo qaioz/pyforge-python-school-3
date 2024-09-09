@@ -2,8 +2,11 @@ import csv
 import io
 import logging
 from functools import lru_cache
-from fastapi import UploadFile
+from typing import Annotated
+
+from fastapi import UploadFile, Depends
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 
 from src.exception import UnknownIdentifierException
 from src.molecules.exception import (
@@ -37,15 +40,9 @@ logger = logging.getLogger(__name__)
 class MoleculeService:
     required_columns = {"smiles", "name"}
 
-    def __init__(
-        self,
-        repository: MoleculeRepository,
-        session_factory,
-        redis_cache_service: RedisCacheService,
-    ):
+    def __init__(self, repository: MoleculeRepository, session_factory: sessionmaker):
         self._repository = repository
         self._session_factory = session_factory
-        self._redis = redis_cache_service
 
     def find_by_id(self, obj_id: int):
         """
@@ -361,7 +358,9 @@ class MoleculeService:
 
 
 @lru_cache
-def get_molecule_service():
-    return MoleculeService(
-        get_molecule_repository(), get_session_factory(), get_redis_cache_service()
-    )
+def get_molecule_service(
+    repository: Annotated[MoleculeRepository, Depends(get_molecule_repository)],
+    session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
+    redis_cache_service: Annotated[RedisCacheService, Depends(get_redis_cache_service)],
+):
+    return MoleculeService(repository, session_factory)

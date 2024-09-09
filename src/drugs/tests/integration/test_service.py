@@ -20,7 +20,7 @@ service = DrugService(repository, session_factory)
 mock_redis = Mock()
 mock_redis.get.return_value = None
 molecule_repository = MoleculeRepository()
-molecule_service = MoleculeService(molecule_repository, session_factory, mock_redis)
+molecule_service = MoleculeService(molecule_repository, session_factory)
 
 
 @pytest.fixture

@@ -29,7 +29,7 @@ mocked_redis_client = mock.Mock()
 mocked_redis_client.get_json.return_value = None
 
 molecule_service = MoleculeService(
-    molecule_repository, session_factory, mocked_redis_client
+    molecule_repository, session_factory
 )
 
 client = TestClient(app)

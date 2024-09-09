@@ -1,6 +1,8 @@
 from datetime import datetime
 from functools import lru_cache
 from typing import Annotated
+
+from fastapi import Depends
 from sqlalchemy import func, create_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
@@ -10,7 +12,7 @@ from sqlalchemy.orm import (
     sessionmaker,
 )
 
-from src.config import Settings
+from src.config import get_settings
 
 created_at = Annotated[datetime, mapped_column(server_default=func.now())]
 updated_at = Annotated[
@@ -31,11 +33,18 @@ class Base(DeclarativeBase):
 
 @lru_cache
 def get_database_url():
-    return Settings().database_url
+    if get_settings().DEV_MODE and get_settings().TEST_MODE:
+        raise ValueError("Cannot run in DEV and TEST mode at the same time")
+
+    if get_settings().DEV_MODE:
+        return get_settings().DEV_DB_URL
+
+    if get_settings().TEST_MODE:
+        return get_settings().TEST_DB_URL
 
 
 @lru_cache
-def get_session_factory():
+def get_session_factory(database_url: Annotated[str, Depends(get_database_url)]):
     return sessionmaker(
-        bind=create_engine(get_database_url()), autoflush=False, autocommit=False
+        bind=create_engine(database_url), autoflush=False, autocommit=False
     )

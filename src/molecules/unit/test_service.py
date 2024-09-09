@@ -22,7 +22,7 @@ class B(A):
     e: E
 
 
-ms = MoleculeService(None, None, None)
+ms = MoleculeService(None, None)
 
 
 def test_redis_key():
