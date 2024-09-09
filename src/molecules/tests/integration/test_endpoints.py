@@ -330,7 +330,7 @@ def test_order_by_mass_mass_filters(order, min_mass, max_mass, init_db):
     if max_mass:
         query_builder += f"maxMass={max_mass}&"
 
-    response = client.get(query_builder)
+    response = client.get(query_builder, headers={"cache-control": "no-cache"})
 
     min_mass = min_mass if min_mass else 0
     max_mass = max_mass if max_mass else 10**5
