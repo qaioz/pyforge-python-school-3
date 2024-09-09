@@ -53,5 +53,5 @@ jobs:
           pytest --cov=src --cov-fail-under=80
         env:
           TEST_DB_URL: postgresql://test_user:test_password@localhost:54321/test_db
-          REDIS_HOST: redis
+          REDIS_HOST: localhost
           REDIS_PORT: 6370
