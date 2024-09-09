@@ -119,7 +119,9 @@ def test_find_by_id(i, init_db):
 def test_find_by_id_not_found(i, init_db):
     response = post_consecutive_alkanes(i, 1)[0]
     response_id = response["molecule_id"]
-    response = client.get(f"/molecules/{response_id + 1}")
+    response = client.get(
+        f"/molecules/{response_id + 1}", headers={"cache-control": "no-cache"}
+    )
     assert response.status_code == 404
 
 
@@ -154,7 +156,10 @@ def test_delete_molecule(i, init_db):
     responses = post_consecutive_alkanes(1, 11)
     response = client.delete(f"/molecules/{responses[i]['molecule_id']}")
     assert response.status_code == 200
-    response = client.get(f"/molecules/{responses[i]['molecule_id']}")
+    response = client.get(
+        f"/molecules/{responses[i]['molecule_id']}",
+        headers={"cache-control": "no-cache"},
+    )
     assert response.status_code == 404
 
 
@@ -162,7 +167,8 @@ def test_delete_molecule(i, init_db):
 def test_substructures(i, init_db):
     responses = post_consecutive_alkanes(1, 20)
     response = client.get(
-        f"/molecules/search/substructures?smiles={responses[i]['smiles']}"
+        f"/molecules/search/substructures?smiles={responses[i]['smiles']}",
+        headers={"cache-control": "no-cache"},
     )
     assert response.status_code == 200
     response_json = response.json()["data"]
@@ -175,7 +181,8 @@ def test_substructures(i, init_db):
 def test_superstructures(i, init_db):
     responses = post_consecutive_alkanes(1, 20)
     response = client.get(
-        f"/molecules/search/superstructures?smiles={responses[i - 1]['smiles']}"
+        f"/molecules/search/superstructures?smiles={responses[i - 1]['smiles']}",
+        headers={"cache-control": "no-cache"},
     )
     assert response.status_code == 200
     response_json = response.json()["data"]
@@ -238,7 +245,10 @@ def test_decane_nonane_invalid_smiles(init_db, create_testing_files):
 @pytest.mark.parametrize("page, page_size", [(1, 5), (2, 5), (1, 9), (1, 20)])
 def test_find_all(page, page_size, init_db):
     post_consecutive_alkanes(1, 10)
-    response = client.get(f"/molecules/?page={page}&page_size={page_size}")
+    response = client.get(
+        f"/molecules/?page={page}&page_size={page_size}",
+        headers={"cache-control": "no-cache"},
+    )
     assert response.status_code == 200
     data = response.json()["data"]
     assert len(data) <= page_size
@@ -258,7 +268,10 @@ def test_find_all_name_filter(_, init_db):
         assert response.status_code == 201
 
     i = random.randint(0, 4)
-    response = client.get(f"/molecules/?name={alkane_requests[i]['name']}")
+    response = client.get(
+        f"/molecules/?name={alkane_requests[i]['name']}",
+        headers={"cache-control": "no-cache"},
+    )
     assert response.status_code == 200
 
     assert response.json()["data"][0]["name"] == alkane_requests[i]["name"]
@@ -275,7 +288,8 @@ def test_find_all_name_mass_filter(min_mass, max_mass, expected_length, init_db)
         assert response.status_code == 201
 
     response = client.get(
-        f"/molecules/?name={'gaozane'}&minMass={min_mass}&maxMass={max_mass}"
+        f"/molecules/?name={'gaozane'}&minMass={min_mass}&maxMass={max_mass}",
+        headers={"cache-control": "no-cache"},
     )
 
     assert response.status_code == 200
@@ -338,7 +352,9 @@ def test_order_by_mass_mass_filters(order, min_mass, max_mass, init_db):
 
 def test_find_all_pagination(init_db):
     post_consecutive_alkanes(1, 7)
-    response = client.get("/molecules/?page=0&pageSize=5")
+    response = client.get(
+        "/molecules/?page=0&pageSize=5", headers={"cache-control": "no-cache"}
+    )
     assert response.status_code == 200
     response_body = response.json()
 
@@ -346,7 +362,10 @@ def test_find_all_pagination(init_db):
     assert response_body["page_size"] == 5
     assert response_body["total"] == 5
 
-    response = client.get(response_body["links"]["next_page"]["href"])
+    response = client.get(
+        response_body["links"]["next_page"]["href"],
+        headers={"cache-control": "no-cache"},
+    )
     assert response.status_code == 200
 
     response_body = response.json()
@@ -356,7 +375,10 @@ def test_find_all_pagination(init_db):
     assert response_body["total"] == 2
     assert len(response_body["data"]) == 2
 
-    response = client.get(response_body["links"]["prev_page"]["href"])
+    response = client.get(
+        response_body["links"]["prev_page"]["href"],
+        headers={"cache-control": "no-cache"},
+    )
     assert response.status_code == 200
 
     response_body = response.json()
@@ -366,7 +388,10 @@ def test_find_all_pagination(init_db):
     assert response_body["total"] == 5
     assert len(response_body["data"]) == 5
 
-    response = client.get(response_body["links"]["prev_page"]["href"])
+    response = client.get(
+        response_body["links"]["prev_page"]["href"],
+        headers={"cache-control": "no-cache"},
+    )
 
     assert response.status_code == 200
 

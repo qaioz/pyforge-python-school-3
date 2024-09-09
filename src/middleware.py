@@ -26,14 +26,10 @@ async def log_request_time_middleware(request: Request, call_next):
 
 async def caching_middleware(request: Request, call_next):
     # this is a dictionary of endpoints that should be cached with their respective expiration time
-    cached_endpoints = {
-        "**/molecules/**": 60 * 60 * 24 * 7
-    }
+    cached_endpoints = {"**/molecules/**": 60 * 60 * 24 * 7}
 
     if request.method != "GET":
-        logger.info(
-            "Request is not cached because it is not a GET request"
-        )
+        logger.info("Request is not cached because it is not a GET request")
         return await call_next(request)
 
     # fnmatch is used to match the request URL with the cached endpoints, it supports unix shell-style wildcards
