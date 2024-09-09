@@ -4,6 +4,10 @@ import redis
 
 from src.config import get_settings
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class RedisCacheService:
     CACHE_EXPIRATION = 60 * 60 * 24 * 7  # 1 week
@@ -25,8 +29,9 @@ def get_redis_client():
         return redis.Redis(
             host=get_settings().REDIS_HOST, port=get_settings().REDIS_PORT, db=0
         )
-    except:
-
+    except Exception as e:
+        logger.error(f"Could not connect to Redis: {e}")
+        return None
 
 
 @lru_cache
