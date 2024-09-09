@@ -18,7 +18,7 @@ from src.molecules.tests.testing_utils import (
     heptane_isomer_requests,
     get_imaginary_alkane_requests,
 )
-from src.redis import RedisCacheService
+# from src.redis import RedisCacheService
 
 # engine = create_engine("postgresql://user:password@localhost:5432/db_test")
 engine = create_engine(
@@ -27,8 +27,9 @@ engine = create_engine(
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 molecule_repository = MoleculeRepository()
 
-mocked_redis_client = mock.Mock(spec=RedisCacheService)
+mocked_redis_client = mock.Mock()
 mocked_redis_client.get_json.return_value = None
+
 molecule_service = MoleculeService(
     molecule_repository, session_factory, mocked_redis_client
 )

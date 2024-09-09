@@ -21,9 +21,12 @@ class RedisCacheService:
 
 @lru_cache
 def get_redis_client():
-    return redis.Redis(
-        host=get_settings().REDIS_HOST, port=get_settings().REDIS_PORT, db=0
-    )
+    try:
+        return redis.Redis(
+            host=get_settings().REDIS_HOST, port=get_settings().REDIS_PORT, db=0
+        )
+    except:
+
 
 
 @lru_cache
