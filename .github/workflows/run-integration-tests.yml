@@ -32,7 +32,6 @@ jobs:
 
       redis:
         image: "redis/redis-stack"
-        container_name: redis_dev
         ports:
           - "6370:6379"
 
