@@ -6,8 +6,7 @@ from src.config import get_settings
 
 
 class RedisCacheService:
-
-    CACHE_EXPIRATION = 60 * 60 * 24
+    CACHE_EXPIRATION = 60 * 60 * 24 * 7  # 1 week
 
     def __init__(self, redis_client: redis.Redis):
         self.redis_client = redis_client
@@ -30,3 +29,5 @@ def get_redis_client():
 @lru_cache
 def get_redis_cache_service():
     return RedisCacheService(get_redis_client())
+
+

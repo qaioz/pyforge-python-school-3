@@ -58,18 +58,11 @@ class MoleculeService:
         :raises UnknownIdentifierException: if the molecule with the given id does not exist
         """
 
-        key = self._redis_key("find_by_id", obj_id=obj_id)
-        cached = self._redis.get_json(key)
-        if cached:
-            logger.info(f"Cache hit for key: {key}")
-            return MoleculeResponse.model_validate(cached)
-
         with self._session_factory() as session:
             mol = self._repository.find_by_id(obj_id, session)
             if mol is None:
                 raise UnknownIdentifierException(obj_id)
             ans = mapper.model_to_response(mol)
-            self._redis.set_json(key, ans.model_dump())
             return ans
 
     def save(self, molecule_request: MoleculeRequest):
@@ -129,16 +122,6 @@ class MoleculeService:
         :return: List of all molecules
         """
 
-        key = self._redis_key(
-            "find_all", page=page, page_size=page_size, **search_params.model_dump()
-        )
-        cached = self._redis.get_json(key)
-        if cached:
-            logger.info(f"Cache hit for key: {key}")
-            return MoleculeCollectionResponse.model_validate(cached)
-
-        logger.info(f"Cache miss for key: {key}")
-
         with self._session_factory() as session:
             molecules = self._repository.find_all(
                 session, page, page_size, search_params
@@ -170,14 +153,6 @@ class MoleculeService:
                     },
                 }
             )
-
-            mod = res.model_dump()
-
-            # for mol in mod["data"]:
-            #     mol["created_at"] = mol["created_at"].isoformat()
-            #     mol["updated_at"] = mol["updated_at"].isoformat()
-
-            self._redis.set_json(key, mod)
 
             return res
 
@@ -211,13 +186,6 @@ class MoleculeService:
 
         mol = get_chem_molecule_from_smiles_or_raise_exception(smiles)
 
-        key = self._redis_key("substructures", smiles=smiles, limit=limit)
-
-        cached = self._redis.get_json(key)
-        if cached:
-            logger.info(f"Cache hit for key: {key}")
-            return MoleculeCollectionResponse.model_validate(cached)
-
         data = []
         find_all = self.__iterate_on_find_all()
         count = 0
@@ -238,8 +206,6 @@ class MoleculeService:
             }
         )
 
-        self._redis.set_json(key, res.model_dump())
-
         return res
 
     def get_superstructures(
@@ -255,13 +221,6 @@ class MoleculeService:
         """
 
         mol = get_chem_molecule_from_smiles_or_raise_exception(smiles)
-
-        key = self._redis_key("superstructures", smiles=smiles, limit=limit)
-
-        cached = self._redis.get_json(key)
-        if cached:
-            logger.info(f"Cache hit for key: {key}")
-            return MoleculeCollectionResponse.model_validate(cached)
 
         data = []
 
@@ -284,8 +243,6 @@ class MoleculeService:
                 "links": {},
             }
         )
-
-        self._redis.set_json(key, res.model_dump())
 
         return res
 
