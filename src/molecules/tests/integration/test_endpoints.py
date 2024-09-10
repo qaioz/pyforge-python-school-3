@@ -132,7 +132,7 @@ def test_update_molecule(i, init_db):
     update_request2 = {"name": "UpdatedName2"}
 
     for req in [update_request1, update_request2]:
-        response = client.patch(f"/molecules/{responses[i]['molecule_id']}", json=req)
+        response = client.patch(f"/molecules/{responses[i]['molecule_id']}/", json=req)
         assert response.status_code == 200
         assert response.json()["name"] == req["name"]
         js = response.json()
@@ -144,14 +144,14 @@ def test_update_molecule(i, init_db):
 def test_update_molecule_not_found(i, init_db):
     post_consecutive_alkanes(1, 11)
     update_request = {"name": "UpdatedName"}
-    response = client.patch(f"/molecules/{100000}", json=update_request)
+    response = client.patch(f"/molecules/{100000}/", json=update_request)
     assert response.status_code == 404
 
 
 @pytest.mark.parametrize("i", [random.randint(1, 10) for _ in range(5)])
 def test_delete_molecule(i, init_db):
     responses = post_consecutive_alkanes(1, 11)
-    response = client.delete(f"/molecules/{responses[i]['molecule_id']}")
+    response = client.delete(f"/molecules/{responses[i]['molecule_id']}/")
     assert response.status_code == 200
     response = client.get(
         f"/molecules/{responses[i]['molecule_id']}",
@@ -164,7 +164,7 @@ def test_delete_molecule(i, init_db):
 def test_substructures(i, init_db):
     responses = post_consecutive_alkanes(1, 20)
     response = client.get(
-        f"/molecules/search/substructures?smiles={responses[i]['smiles']}",
+        f"/molecules/search/substructures/?smiles={responses[i]['smiles']}",
         headers={"cache-control": "no-cache"},
     )
     assert response.status_code == 200
@@ -178,7 +178,7 @@ def test_substructures(i, init_db):
 def test_superstructures(i, init_db):
     responses = post_consecutive_alkanes(1, 20)
     response = client.get(
-        f"/molecules/search/superstructures?smiles={responses[i - 1]['smiles']}",
+        f"/molecules/search/superstructures/?smiles={responses[i - 1]['smiles']}",
         headers={"cache-control": "no-cache"},
     )
     assert response.status_code == 200
@@ -208,7 +208,7 @@ def test_file_upload(init_db, create_testing_files):
     """
     post_consecutive_alkanes(1, 3)
     with open("alkanes.csv", "rb") as file:
-        response = client.post("/molecules/upload", files={"file": file})
+        response = client.post("/molecules/upload/", files={"file": file})
         response_json = response.json()
         assert response.status_code == 201
         assert response_json["number_of_molecules_added"] == 7
@@ -221,7 +221,7 @@ def test_file_upload_invalid_header(init_db, create_testing_files):
     The response should be 400.
     """
     with open("invalid_header.csv", "rb") as file:
-        response = client.post("/molecules/upload", files={"file": file})
+        response = client.post("/molecules/upload/", files={"file": file})
         assert response.status_code == 400
 
 
