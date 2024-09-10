@@ -1,7 +1,5 @@
 from unittest import mock
 
-import redis
-
 from src.redis import RedisCacheService
 
 

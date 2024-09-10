@@ -4,7 +4,7 @@ from fastapi import Request
 import logging
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import StreamingResponse, JSONResponse
-from src.redis import get_redis_cache_service, get_redis_client
+from src.redis import get_redis_cache_service
 import fnmatch
 
 logger = logging.getLogger(__name__)
@@ -26,8 +26,8 @@ called = 0
 
 
 async def caching_middleware(
-        request: Request,
-        call_next,
+    request: Request,
+    call_next,
 ):
 
     # I could not find a way to inject the redis client into the middleware, so I am accessing it from the function
@@ -47,7 +47,7 @@ async def caching_middleware(
 
     # fnmatch is used to match the request URL with the cached endpoints, it supports unix shell-style wildcards
     if not any(
-            fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
+        fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
     ):
         logger.info(f"URL {request.url.path} is not cached")
         return await call_next(request)

@@ -1,6 +1,5 @@
 import random
 import pytest
-import unittest.mock as mock
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -112,7 +111,7 @@ def test_get_molecule_by_id(idx, init_db):
         (1, 5, "wate", None, None, None, None),
         (1, 10, None, 10, 20, None, None),
         (1, 11, None, None, None, "mass", "asc"),
-        (1, 12, None, None, None, "mass", "desc")
+        (1, 12, None, None, None, "mass", "desc"),
     ],
 )
 def test_find_all_mock(page, pageSize, name, minMass, maxMass, orderBy, order, init_db):
