@@ -42,6 +42,8 @@ def get_database_url():
     if get_settings().TEST_MODE:
         return get_settings().TEST_DB_URL
 
+    return get_settings().database_url
+
 
 @lru_cache
 def get_session_factory(database_url: Annotated[str, Depends(get_database_url)]):

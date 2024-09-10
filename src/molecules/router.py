@@ -86,7 +86,7 @@ def get_molecules(
 
 
 @router.patch(
-    "/{molecule_id}",
+    "/{molecule_id}/",
     status_code=200,
     responses={
         # status.HTTP_200_OK: {"model": MoleculeResponse},
@@ -112,7 +112,7 @@ def update_molecule(
 
 
 @router.delete(
-    "/{molecule_id}",
+    "/{molecule_id}/",
     status_code=200,
     responses={
         status.HTTP_200_OK: {"description": "Molecule deleted successfully"},
@@ -132,7 +132,7 @@ def delete_molecule(
 
 
 @router.get(
-    "/search/substructures",
+    "/search/substructures/",
     responses={
         # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
         status.HTTP_400_BAD_REQUEST: {
@@ -161,7 +161,7 @@ def substructure_search(
 
 
 @router.get(
-    "/search/superstructures",
+    "/search/superstructures/",
     responses={
         # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
         status.HTTP_400_BAD_REQUEST: {
@@ -192,7 +192,7 @@ def substructure_search_of(
     return service.get_superstructures(smiles, limit)
 
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED)
+@router.post("/upload/", status_code=status.HTTP_201_CREATED)
 def upload_molecules(
     file: UploadFile,
     service: Annotated[MoleculeService, Depends(get_molecule_service)],

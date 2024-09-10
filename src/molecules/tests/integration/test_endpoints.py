@@ -28,9 +28,7 @@ molecule_repository = MoleculeRepository()
 mocked_redis_client = mock.Mock()
 mocked_redis_client.get_json.return_value = None
 
-molecule_service = MoleculeService(
-    molecule_repository, session_factory
-)
+molecule_service = MoleculeService(molecule_repository, session_factory)
 
 client = TestClient(app)
 app.dependency_overrides[get_molecule_service] = lambda: molecule_service

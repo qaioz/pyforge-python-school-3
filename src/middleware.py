@@ -22,9 +22,12 @@ async def log_request_time_middleware(request: Request, call_next):
     return response
 
 
+called = 0
+
+
 async def caching_middleware(
-    request: Request,
-    call_next,
+        request: Request,
+        call_next,
 ):
 
     # I could not find a way to inject the redis client into the middleware, so I am accessing it from the function
@@ -33,11 +36,10 @@ async def caching_middleware(
     # fastapi community for some reason as far as I can see
     # when the app is running in DEV or TEST mode, it will have a different redis client, get settings has an
     # variable that is set to DEV or TEST mode
-    print(get_redis_client())
     redis = get_redis_cache_service()
 
     # this is a dictionary of endpoints that should be cached with their respective expiration time
-    cached_endpoints = {"**/molecules/**": 60 * 60 * 24 * 7}
+    cached_endpoints = {"**/molecules**": 60 * 60 * 24 * 7}
 
     if request.method != "GET":
         logger.info("Request is not cached because it is not a GET request")
@@ -45,7 +47,7 @@ async def caching_middleware(
 
     # fnmatch is used to match the request URL with the cached endpoints, it supports unix shell-style wildcards
     if not any(
-        fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
+            fnmatch.fnmatch(request.url.path, endpoint) for endpoint in cached_endpoints
     ):
         logger.info(f"URL {request.url.path} is not cached")
         return await call_next(request)
@@ -59,10 +61,6 @@ async def caching_middleware(
         url + "?" + "&".join([f"{k}={v}" for k, v in params])
         if len(params) > 0
         else url
-    )
-
-    logger.info(
-        f"cache key: {cache_key} is equal to molecules/10  {cache_key == '/molecules/10'}"
     )
 
     cached_response = redis.get_json(cache_key)

@@ -21,7 +21,6 @@ register_middlewares(app)
 @app.get("/")
 def get_server_id():
     from os import getenv
-
     return "Hello from  server " + getenv("SERVER_ID", "")
 
 
