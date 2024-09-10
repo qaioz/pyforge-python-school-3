@@ -34,8 +34,8 @@ async def caching_middleware(
     # All of the dependencies are singletons, so it should not be a problem
     # I with there was a dependency injection container library like in .NET or Spring, but it is not widely used in
     # fastapi community for some reason as far as I can see
-    # when the app is running in DEV or TEST mode, it will have a different redis client, get settings has an
-    # variable that is set to DEV or TEST mode
+    # when the app is running in DEV or TEST mode, which is possible by just setting these environment variables,
+    # different redis instance is used, so the cache is not shared between the environments
     redis = get_redis_cache_service()
 
     # this is a dictionary of endpoints that should be cached with their respective expiration time

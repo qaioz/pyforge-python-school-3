@@ -525,5 +525,108 @@ of chem molecules, but that does not happen unless smiles you are searhing for i
 
 ### Redis 
 
+Suprisingly enough, this took a lot of time, I faced many bugs, had to revise dependency injection system, 
+middleware system, and I faced so many bugs, but at the end I feel like I learned a lot, plus my app is now
+much faster.
+
+I had many ideas what approaches to use. I came up with an idea to use middleware(centralized caching not write cache
+logic in every service or router) with a 
+service pattern(defined redis_cahing_service that wraps redis.Redis instance).
+
+**Endpoints that I want to cache should be hard-coded in the middleware with unix pattern matching**
+
+I will explain this in detail below.
+
+#### What to cache
+
+I imagine that molecules endpoint in this app represents pre-populated data, that does not change often, 
+and it is used by **lab workers or lab admins** to do substructure and other searches, so **molecules
+endpoint is most heavily used and bottleneck among others described before**
+
+It is important to cache all **GET endpoints of /molecules** namely
+
+    - GET: /molecules/{molecule_id}
+
+    - GET: /molecules/?page={page}&pageSize={pageSize}&name={name}&minMass={minMass}&maxMass={maxMass}
+                &order={order}&orderBy={orderBy} 
+
+    - GET: /molecules/search/substructures?smiles={smiles}?limit={limit} Search for a molecule by substructure
+    
+    - GET: /molecules/search/superstructures?smiles={smiles}?limit={limit} Search for a molecule by superstructure
+
+#### Invalidation strategy
+
+Most strick invalidation strategy is to invalidate cache every time a molecule is created, updated, or deleted. 
+I do not think this is necessary, instead I did Time-based invalidation, I set the cache to expire every 24 hours
+by default. see `src/redis.py RedisCacheService.DEFAULT_EXPIRE_TIME`. Plus every endpoint can be configured to have
+different expire time, for example   in middleware.py snippet 
+`cached_endpoints = {"**/molecules**": 60 * 60 * 24 * 7}`
+This time I think can be 24 hours.
+
+**But if the client want to invalidate cache manually, they can send `Cache-Control: no-cache` header, 
+this will invalidate cache for that request and return fresh data.**
+
+
+#### Implementation
+
+Instead of redis-alpine recommended in the task, I used **"redis/redis-stack" image** from the official documentation.
+It has the support for not only set, get, but json().get() and json().set() methods, which is a must for our case.
+json() ilbrary makes it possible to store and retrieve dictionaries, which is what we need.
+
+of course I use redis-py library to interact with redis.
+
+Let's see how I implemented this. Most of the code is in `src/redis.py` and `src/middleware.py`
+
+##### RedisCacheService
+
+This is a service that wraps redis.Redis instance see `src/redis.py`
+
+##### cache_middleware
+
+This is the most important part, it is a middleware that caches responses of certain endpoints, see `src/middleware.py`
+The code has all the documentation, so I will not explain it here. see `src/middleware.py`
+
+#### Testing
+
+Test_cache_endpoint.py is a test that tests the middleware, it is in `src/molecules/tests/test_cache_endpoint.py`
+
+I show by patching when caching is used and when it is not used, and I inspect the redis service
+after requests to see if the cache is set and deleted correctly.
+
+
+#### Demo
+
+Let's see how `get: /molecules/search/substructures` is sped up by caching.
+
+I will make 3 requests
+
+- First request is slow, because cache is not set yet 11.9 seconds
+
+      - http://localhost:8000/molecules/search/superstructures?smiles=CCCC
+    
+- Second request is fast, because cache is hit 0.009 seconds
+
+      - http://localhost:8000/molecules/search/superstructures?smiles=CCCC
+
+- Third request is CCCCC, it is not cached, so it is slower that the second request but still, significantly faster 
+than the first request because the Chem object caching is used 0.05 seconds
+
+      - http://localhost:8000/molecules/search/superstructures?smiles=CCCCC
+
+![img_15.png](img_15.png)
+
+
+
+#### Conclusion on Redis
+
+Redis is very effective, it makes every request hundreds of times faster, and in process I learned a lot.
+
+### Conclusion on performance
+
+I improved performance by indexing, caching rdkit Chem objects, and using Redis for centralized caching.
+
+
+
+
 
 
