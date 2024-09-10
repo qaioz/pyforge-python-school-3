@@ -33,7 +33,7 @@ jobs:
       redis:
         image: "redis/redis-stack"
         ports:
-          - "6370:6379"
+          - "6371:6379"
 
     steps:
       - name: Checkout code
@@ -54,4 +54,4 @@ jobs:
         env:
           TEST_DB_URL: postgresql://test_user:test_password@localhost:54321/test_db
           REDIS_HOST: localhost
-          REDIS_PORT: 6370
+          REDIS_PORT: 6371
