@@ -198,3 +198,34 @@ def test_superstructure_search_mock(smiles, limit, init_db):
     assert response2.status_code == 200
 
     assert response.json() == response2.json()
+
+
+@pytest.mark.parametrize("idx", [random.randint(1, 10) for _ in range(5)])
+def test_no_cache_header_mock(idx, init_db):
+    """
+    I will test just one endpoint, should be enough to test the logic, every endpoint
+    has centralized logic in the middleware for no-cache header.
+    """
+
+    # Initially the cache should not have the key
+    assert_key_exists_in_cache(redis, "/molecules/", should_exist=False)
+
+    assert_set_json_called_with_url(
+        client, redis, url=f"/molecules/{idx}", should_be_called=True
+    )
+
+    # make a request to the endpoint
+    request = client.get(f"/molecules/{idx}")
+
+#     now when i make a casual request to the endpoint, the cache should be hit
+    assert_set_json_called_with_url(
+        client, redis, url=f"/molecules/{idx}", should_be_called=False
+    )
+
+#     but is i make a request with no-cache header, the cache should be invalidated
+    assert_set_json_called_with_url(
+        client, redis, url=f"/molecules/{idx}", should_be_called=True, headers={"cache-control": "no-cache"}
+    )
+
+
+

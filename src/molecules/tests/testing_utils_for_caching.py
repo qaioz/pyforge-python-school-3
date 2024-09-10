@@ -4,7 +4,7 @@ from src.redis import RedisCacheService
 
 
 def assert_set_json_called_with_url(
-    client, redis: RedisCacheService, url, should_be_called
+    client, redis: RedisCacheService, url, should_be_called, headers=None
 ):
     """
     This is helpful method fot **UNIT** testing the caching mechanism.
@@ -23,7 +23,10 @@ def assert_set_json_called_with_url(
     """
 
     with mock.patch.object(redis, "set_json") as mock_set:
-        response = client.get(url)
+        if not headers:
+            response = client.get(url)
+        else:
+            response = client.get(url, headers=headers)
         assert response.status_code == 200
         if should_be_called:
             mock_set.assert_called_once()
