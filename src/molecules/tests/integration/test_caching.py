@@ -216,16 +216,18 @@ def test_no_cache_header_mock(idx, init_db):
 
     # make a request to the endpoint
     request = client.get(f"/molecules/{idx}")
+    assert request.status_code == 200
 
-#     now when i make a casual request to the endpoint, the cache should be hit
+    #     now when i make a casual request to the endpoint, the cache should be hit
     assert_set_json_called_with_url(
         client, redis, url=f"/molecules/{idx}", should_be_called=False
     )
 
-#     but is i make a request with no-cache header, the cache should be invalidated
+    #     but is i make a request with no-cache header, the cache should be invalidated
     assert_set_json_called_with_url(
-        client, redis, url=f"/molecules/{idx}", should_be_called=True, headers={"cache-control": "no-cache"}
+        client,
+        redis,
+        url=f"/molecules/{idx}",
+        should_be_called=True,
+        headers={"cache-control": "no-cache"},
     )
-
-
-
