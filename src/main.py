@@ -4,7 +4,7 @@ from src.molecules.router import router as molecule_router
 from src.drugs.router import router as drug_router
 from src.handler import register_exception_handlers
 from src.config import setup_logging
-
+from src.celery_worker import celery
 setup_logging()
 
 app = FastAPI()
@@ -22,6 +22,15 @@ def get_server_id():
     from os import getenv
 
     return "Hello from  server " + getenv("SERVER_ID", "")
+
+
+@app.get("/tasks/{task_id}")
+def read_item(task_id: str):
+    task = celery.AsyncResult(task_id)
+    if task.state == "SUCCESS":
+        return {"status": task.state, "result": task.result}
+    else:
+        return {"status": task.state}
 
 
 # @app.on_event("startup")

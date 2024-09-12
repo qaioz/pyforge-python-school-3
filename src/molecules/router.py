@@ -135,6 +135,7 @@ def delete_molecule(
 
 @router.get(
     "/search/substructures/",
+    status_code=202,
     responses={
         status.HTTP_202_ACCEPTED: {"model": dict[str, str]},
         status.HTTP_400_BAD_REQUEST: {

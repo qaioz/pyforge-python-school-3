@@ -13,6 +13,16 @@ services:
     volumes:
         - db_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis/redis-stack
+    ports:
+      - ${REDIS_PORT}:6379
+
+  celery_worker:
+    build: .
+    entrypoint: celery -A app.celery_worker worker --loglevel=info
+    depends_on:
+      - redis
 
   web1:
     build: .
@@ -24,6 +34,7 @@ services:
       TEST_MODE: FALSE
     depends_on:
       - postgres
+      - redis
     entrypoint: ["/bin/sh", "-c", "alembic upgrade head && fastapi run src/main.py"]
 
   web2:
@@ -34,7 +45,6 @@ services:
       DEV_MODE: FALSE
       TEST_MODE: FALSE
     depends_on:
-      - postgres
       - web1
 
 # The reason why I did not use the build option for web2 is that It will result
