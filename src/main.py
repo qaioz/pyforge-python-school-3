@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-
 from src.middleware import register_middlewares
 from src.molecules.router import router as molecule_router
 from src.drugs.router import router as drug_router
@@ -23,6 +22,7 @@ def get_server_id():
     from os import getenv
 
     return "Hello from  server " + getenv("SERVER_ID", "")
+
 
 
 # @app.on_event("startup")

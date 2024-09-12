@@ -361,6 +361,5 @@ class MoleculeService:
 def get_molecule_service(
     repository: Annotated[MoleculeRepository, Depends(get_molecule_repository)],
     session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
-    redis_cache_service: Annotated[RedisCacheService, Depends(get_redis_cache_service)],
 ):
     return MoleculeService(repository, session_factory)
