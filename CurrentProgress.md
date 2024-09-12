@@ -624,9 +624,3 @@ Redis is very effective, it makes every request hundreds of times faster, and in
 ### Conclusion on performance
 
 I improved performance by indexing, caching rdkit Chem objects, and using Redis for centralized caching.
-
-
-
-
-
-
