@@ -8,12 +8,11 @@ on:
     branches:
       - main
       - develop/drugs_and_molecules
-      - feature/logging_and_iterator
+
   pull_request:
     branches:
       - develop/drugs_and_molecules
-      - feature/add_drugs
-      - main
+
 
 
 jobs:

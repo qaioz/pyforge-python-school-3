@@ -24,7 +24,6 @@ def get_server_id():
     return "Hello from  server " + getenv("SERVER_ID", "")
 
 
-
 # @app.on_event("startup")
 # def add_3_molecules():
 #     service = get_molecule_service(ge

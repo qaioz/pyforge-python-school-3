@@ -1,7 +1,6 @@
 from typing import Annotated
 from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter
 
-from src import celery_worker
 from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,

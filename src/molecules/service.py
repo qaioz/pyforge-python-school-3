@@ -31,7 +31,6 @@ from src.molecules.utils import (
 )
 from src.database import get_session_factory
 from src.molecules import mapper
-from src.redis import RedisCacheService, get_redis_cache_service
 from src.schema import MoleculeUpdateRequest, Link
 
 logger = logging.getLogger(__name__)

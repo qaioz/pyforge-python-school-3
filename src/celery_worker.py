@@ -2,13 +2,11 @@ from celery import Celery
 
 from src.database import get_session_factory, get_database_url
 from src.molecules.repository import get_molecule_repository
-from src.molecules.service import get_molecule_service, MoleculeService
-from src.redis import get_redis_cache_service
+from src.molecules.service import get_molecule_service
+
 
 celery = Celery(
-    'tasks',
-    broker='redis://localhost:6370/0',
-    backend='redis://localhost:6370/0'
+    "tasks", broker="redis://localhost:6370/0", backend="redis://localhost:6370/0"
 )
 
 
