@@ -4,12 +4,9 @@ import pytest
 import unittest.mock as mock
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker
-from src.config import get_settings
-from src.database import Base
+from src.config import get_test_settings
+from src.database import Base, get_database_engine
 from src.main import app
-from src.molecules.repository import MoleculeRepository
-from src.molecules.service import get_molecule_service, MoleculeService
 from src.molecules.tests.generate_csv_file import generate_testing_files
 from src.molecules.tests.testing_utils import (
     alkane_request_jsons,
@@ -19,19 +16,14 @@ from src.molecules.tests.testing_utils import (
     get_imaginary_alkane_requests,
 )
 
-engine = create_engine(
-    get_settings().TEST_DB_URL,
-)
-session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-molecule_repository = MoleculeRepository()
-
+settings = get_test_settings()
+engine = create_engine(settings.database_url)
 mocked_redis_client = mock.Mock()
 mocked_redis_client.get_json.return_value = None
-
-molecule_service = MoleculeService(molecule_repository, session_factory)
-
 client = TestClient(app)
-app.dependency_overrides[get_molecule_service] = lambda: molecule_service
+
+
+app.dependency_overrides[get_database_engine] = lambda: engine
 
 
 @pytest.fixture

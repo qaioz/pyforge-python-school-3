@@ -15,6 +15,7 @@ def assert_set_json_called_with_url(
     that is very hard and requires a lot of mocking of implementation details. Instead, correctness will be easily
     checked in the integration tests.
 
+    :param headers:
     :param client: TestClient instance
     :param redis: Instance of the RedisCacheService
     :param url: URL to be tested

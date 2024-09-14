@@ -1,8 +1,12 @@
 from functools import lru_cache
+from typing import Annotated
+
 import redis
 import logging
 
-from src.config import get_settings
+from fastapi import Depends
+
+from src.config import get_settings, Settings
 
 logger = logging.getLogger(__name__)
 
@@ -20,20 +24,28 @@ class RedisCacheService:
         return self.redis_client.json().get(key, ".")
 
 
+def get_redis_credentials(settings: Annotated[Settings, Depends(get_settings)]) -> dict:
+    return dict(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        db=0,
+    )
+
+
+def get_redis_client(
+    redis_credentials: Annotated[dict, Depends(get_redis_credentials)]
+) -> redis.Redis:
+
+    client = redis.Redis(
+        host=redis_credentials["host"], port=redis_credentials["port"], db=0
+    )
+    if not hasattr(get_redis_client, "client"):
+        get_redis_client.client = client
+    return get_redis_client.client
+
+
 @lru_cache
-def get_redis_client():
-    settings = get_settings()
-    if settings.DEV_MODE:
-        return redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
-
-    if settings.TEST_MODE:
-        return redis.Redis(
-            host=settings.REDIS_HOST, port=settings.REDIS_TEST_PORT, db=0
-        )
-
-    return redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
-
-
-@lru_cache
-def get_redis_cache_service() -> RedisCacheService:
-    return RedisCacheService(get_redis_client())
+def get_redis_cache_service(
+    redis_client: Annotated[redis.Redis, Depends(get_redis_client)]
+) -> RedisCacheService:
+    return RedisCacheService(redis_client)

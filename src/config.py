@@ -1,5 +1,4 @@
 import enum
-from functools import lru_cache
 from os import getenv
 from pydantic_settings import BaseSettings
 import logging
@@ -31,7 +30,6 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str
     REDIS_PORT: int
-    REDIS_DB: int
 
     model_config = {
         "env_file": ".env_prod",
@@ -66,12 +64,13 @@ def get_test_settings() -> TestSettings:
     return TestSettings()
 
 
-@lru_cache
 def get_settings() -> Settings:
     environment = getenv("ENVIRONMENT")
 
     if environment is None:
-        raise ValueError("ENVIRONMENT environment variable is not set, it should be one of PROD, DEV, TEST")
+        raise ValueError(
+            "ENVIRONMENT environment variable is not set, it should be one of PROD, DEV, TEST"
+        )
 
     if environment == Environment.PROD.value:
         return get_prod_settings()
@@ -80,4 +79,6 @@ def get_settings() -> Settings:
     elif environment == Environment.TEST.value:
         return get_test_settings()
     else:
-        raise ValueError("ENVIRONMENT environment variable should be one of PROD, DEV, TEST")
+        raise ValueError(
+            "ENVIRONMENT environment variable should be one of PROD, DEV, TEST"
+        )

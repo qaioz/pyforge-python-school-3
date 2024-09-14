@@ -4,7 +4,6 @@ from fastapi import Request
 import logging
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import StreamingResponse, JSONResponse
-from src.redis import get_redis_cache_service
 import fnmatch
 
 logger = logging.getLogger(__name__)
@@ -36,10 +35,10 @@ async def caching_middleware(
     # fastapi community for some reason as far as I can see
     # when the app is running in DEV or TEST mode, which is possible by just setting these environment variables,
     # different redis instance is used, so the cache is not shared between the environments
-    redis = get_redis_cache_service()
+    redis = None
 
     # this is a dictionary of endpoints that should be cached with their respective expiration time
-    cached_endpoints = {"**/molecules**": 60 * 60 * 24 * 7}
+    cached_endpoints = {}
 
     if request.method != "GET":
         logger.info("Request is not cached because it is not a GET request")
@@ -128,6 +127,6 @@ async def caching_middleware(
 
 
 def register_middlewares(app):
-    app.add_middleware(BaseHTTPMiddleware, dispatch=caching_middleware)
+    # app.add_middleware(BaseHTTPMiddleware, dispatch=caching_middleware)
     # request time logging middleware should be added last
     app.add_middleware(BaseHTTPMiddleware, dispatch=log_request_time_middleware)
