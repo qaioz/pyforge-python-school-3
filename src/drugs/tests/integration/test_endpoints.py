@@ -1,3 +1,5 @@
+from unittest.mock import Mock
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -16,7 +18,9 @@ engine = create_engine(get_test_settings().database_url)
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 drug_repository = DrugRepository()
 drug_service = DrugService(drug_repository, session_factory)
-
+mock_redis_cache_service = Mock()
+# mock the cached method to be a function that returns the function passed to it
+mock_redis_cache_service.cached.wrapper = lambda func: func
 mol_repository = MoleculeRepository()
 molecule_service = MoleculeService(mol_repository, session_factory)
 

@@ -1,5 +1,7 @@
-from typing import Annotated
-from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter
+from typing import Annotated, Literal
+from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter, Header
+
+from src.caching_service import cached
 from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,
@@ -47,11 +49,15 @@ def add_molecule(
         },
     },
 )
+@cached(key_args=["molecule_id"], map_return=lambda res: res.model_dump())
 def get_molecule(
     molecule_id: Annotated[
         int, Path(..., description="Unique identifier for the molecule")
     ],
     service: Annotated[MoleculeService, Depends(get_molecule_service)],
+    cache_control: Annotated[
+        str | None, Header(description="Currently supported values: no-cache")
+    ] = None,
 ):
     return service.find_by_id(molecule_id)
 
@@ -63,6 +69,7 @@ def get_molecule(
         # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
     },
 )
+@cached(key_args=["pagination", "search_params"], map_return=lambda res: res.model_dump())
 def get_molecules(
     service: Annotated[MoleculeService, Depends(get_molecule_service)],
     pagination: Annotated[PaginationQueryParams, Depends(get_pagination_query_params)],
@@ -141,6 +148,7 @@ def delete_molecule(
         },
     },
 )
+@cached(key_args=["smiles", "limit"], map_return=lambda res: res.model_dump())
 def substructure_search(
     smiles: Annotated[
         str,
@@ -153,6 +161,9 @@ def substructure_search(
     limit: Annotated[
         int, Query(description="Stop searching after finding this many molecules")
     ] = 1000,
+    cache_control: Annotated[
+        str | None, Header(description="Currently supported values: no-cache")
+    ] = None,
 ):
     """
     Find all molecules that ARE SUBSTRUCTURES of the given smile, not vice vera.

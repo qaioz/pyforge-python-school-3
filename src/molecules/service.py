@@ -31,7 +31,6 @@ from src.molecules.utils import (
 )
 from src.database import get_session_factory
 from src.molecules import mapper
-from src.redis import RedisCacheService, get_redis_cache_service
 from src.schema import MoleculeUpdateRequest, Link
 
 logger = logging.getLogger(__name__)
@@ -46,9 +45,6 @@ class MoleculeService:
 
     def find_by_id(self, obj_id: int):
         """
-        Find a molecule by its id. Calls exists_by_id to check if the molecule exists, resulting in two database calls.
-        Not vert impressive, but I am trying to keep it simple.
-
         :param obj_id:  molecule id
         :return: found molecule
         :raises UnknownIdentifierException: if the molecule with the given id does not exist
@@ -350,17 +346,10 @@ class MoleculeService:
                     yield molecule
                 page += 1
 
-    @staticmethod
-    def _redis_key(path, **kwargs):
-        # sorted args, filter out None values
-        sorted_args = sorted([(k, v) for k, v in kwargs.items() if v is not None])
-        return f"molecules:{path}:" + ":".join([f"{v}" for k, v in sorted_args])
-
 
 @lru_cache
 def get_molecule_service(
     repository: Annotated[MoleculeRepository, Depends(get_molecule_repository)],
     session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
-    redis_cache_service: Annotated[RedisCacheService, Depends(get_redis_cache_service)],
 ):
     return MoleculeService(repository, session_factory)
