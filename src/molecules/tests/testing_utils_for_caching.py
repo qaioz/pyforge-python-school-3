@@ -1,9 +1,7 @@
 from unittest import mock
 
 
-def assert_set_json_called_with_url(
-        client, redis, url, should_be_called, headers=None
-):
+def assert_set_json_called_with_url(client, redis, url, should_be_called, headers=None):
     """
     This is helpful method fot **UNIT** testing the caching mechanism.
 
@@ -33,9 +31,7 @@ def assert_set_json_called_with_url(
             mock_set.assert_not_called()
 
 
-def assert_key_exists_in_cache(
-        redis_cache_service, key, should_exist
-):
+def assert_key_exists_in_cache(redis_cache_service, key, should_exist):
     """
     Check if a key exists in the cache or not.
     """
@@ -55,4 +51,3 @@ def get_key_from_url_queries(url: str, query_params: dict):
         if len(sorted_query_params) > 0
         else url
     )
-

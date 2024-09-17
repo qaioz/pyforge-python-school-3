@@ -31,6 +31,14 @@ class Settings(BaseSettings):
     REDIS_HOST: str
     REDIS_PORT: int
 
+    BROKER_HOST: str
+    BROKER_PORT: int
+    BROKER_DB: int
+
+    BACKEND_HOST: str
+    BACKEND_PORT: int
+    BACKEND_DB: int
+
     model_config = {
         "env_file": ".env_prod",
     }

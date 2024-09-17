@@ -1,6 +1,7 @@
-from typing import Annotated, Literal
+from typing import Annotated
 from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter, Header
 
+from src import tasks
 from src.caching_service import cached
 from src.molecules.schema import (
     MoleculeRequest,
@@ -70,7 +71,9 @@ def get_molecule(
         status.HTTP_200_OK: {"model": MoleculeCollectionResponse},
     },
 )
-@cached(key_args=["pagination", "search_params"], map_return=lambda res: res.model_dump())
+@cached(
+    key_args=["pagination", "search_params"], map_return=lambda res: res.model_dump()
+)
 def get_molecules(
     service: Annotated[MoleculeService, Depends(get_molecule_service)],
     pagination: Annotated[PaginationQueryParams, Depends(get_pagination_query_params)],
@@ -142,14 +145,13 @@ def delete_molecule(
 @router.get(
     "/search/substructures/",
     responses={
-        status.HTTP_200_OK: {"model": MoleculeCollectionResponse},
+        # status.HTTP_200_OK: {"model": MoleculeCollectionResponse},
         status.HTTP_400_BAD_REQUEST: {
             "model": str,
             "description": "Probably due to Invalid SMILES string",
         },
     },
 )
-@cached(key_args=["smiles", "limit"], map_return=lambda res: res.model_dump())
 def substructure_search(
     smiles: Annotated[
         str,
@@ -158,18 +160,15 @@ def substructure_search(
             description="Find substructures of the given SMILES string",
         ),
     ],
-    service: Annotated[MoleculeService, Depends(get_molecule_service)],
     limit: Annotated[
         int, Query(description="Stop searching after finding this many molecules")
-    ] = 1000,
-    cache_control: Annotated[
-        str | None, Header(description="Currently supported values: no-cache")
-    ] = None,
-) -> MoleculeCollectionResponse:
+    ] = 1000
+):
     """
     Find all molecules that ARE SUBSTRUCTURES of the given smile, not vice vera.
     """
-    return service.get_substructures(smiles, limit)
+    task = tasks.substructure_search_task.delay(smiles, limit)
+    return {"task_id": task.id}
 
 
 @router.get(
@@ -204,8 +203,11 @@ def substructure_search_of(
     return service.get_superstructures(smiles, limit)
 
 
-@router.post("/upload/", status_code=status.HTTP_201_CREATED,
-             responses={status.HTTP_201_CREATED: {"model": dict[str, int]}})
+@router.post(
+    "/upload/",
+    status_code=status.HTTP_201_CREATED,
+    responses={status.HTTP_201_CREATED: {"model": dict[str, int]}},
+)
 def upload_molecules(
     file: UploadFile,
     service: Annotated[MoleculeService, Depends(get_molecule_service)],

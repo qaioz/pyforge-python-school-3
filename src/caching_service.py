@@ -48,7 +48,9 @@ class RedisCacheServiceSingleton:
             cls.create(get_redis_client())
         return cls.__INSTANCE
 
-    def set_json(self, key, value: dict, expiration_seconds: int = CACHE_EXPIRATION) -> None:
+    def set_json(
+        self, key, value: dict, expiration_seconds: int = CACHE_EXPIRATION
+    ) -> None:
         """
         :param key:  the key to be used in the cache
         :param value:  the value to be cached
@@ -65,7 +67,9 @@ class RedisCacheServiceSingleton:
         return self.redis_client.json().get(key, ".")
 
     @staticmethod
-    def generate_caching_key(key_prefix: str, key_args: list[str], **possible_args) -> str:
+    def generate_caching_key(
+        key_prefix: str, key_args: list[str], **possible_args
+    ) -> str:
         """
         Generate a key for caching
 
@@ -113,6 +117,7 @@ def cached(
     the return type is not json_serializable for redis client. One use case in my app is to map MoleculeResponse
     to MolecularResponse.model_dump, otherwise, redis client throws an exception
     """
+
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
@@ -157,7 +162,9 @@ def cached(
                     and "no-cache" in keyword_arguments["cache_control"]
                 ):
                     return cache
-                logger.info("Cache is ignored due to cache-control header, revalidating cache.")
+                logger.info(
+                    "Cache is ignored due to cache-control header, revalidating cache."
+                )
             else:
                 logger.info("Cache miss for key: " + key)
 

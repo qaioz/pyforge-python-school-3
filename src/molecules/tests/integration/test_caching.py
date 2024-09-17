@@ -27,7 +27,9 @@ engine = create_engine(
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 molecule_repository = MoleculeRepository()
 client = TestClient(app)
-redis_test_client = redis.Redis(host=get_test_settings().REDIS_HOST, port=get_test_settings().REDIS_PORT)
+redis_test_client = redis.Redis(
+    host=get_test_settings().REDIS_HOST, port=get_test_settings().REDIS_PORT
+)
 RedisCacheServiceSingleton.create(redis_test_client)
 redis = RedisCacheServiceSingleton.get_instance()
 molecule_service = MoleculeService(molecule_repository, session_factory)
@@ -93,7 +95,9 @@ def test_get_molecule_by_id(idx, init_db):
     assert validate_response_dict_for_ith_alkane(request.json(), idx)
 
     # This should have triggered the set_json method and the cache should be set
-    assert_key_exists_in_cache(redis, f"get_molecule:molecule_id={idx}", should_exist=True)
+    assert_key_exists_in_cache(
+        redis, f"get_molecule:molecule_id={idx}", should_exist=True
+    )
 
     # Now make the same request again, this time the cache should be hit
     request = client.get(f"/molecules/{idx}")

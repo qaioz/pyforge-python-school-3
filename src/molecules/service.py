@@ -22,7 +22,8 @@ from src.molecules.schema import (
     MoleculeRequest,
     SearchParams,
     get_search_params,
-    MoleculeCollectionResponse, MoleculeResponse,
+    MoleculeCollectionResponse,
+    MoleculeResponse,
 )
 from src.molecules.utils import (
     get_chem_molecule_from_smiles_or_raise_exception,
@@ -83,7 +84,9 @@ class MoleculeService:
                     raise DuplicateSmilesException(molecule_request.smiles) from e
                 raise e
 
-    def update(self, obj_id: int, molecule_request: MoleculeUpdateRequest) -> MoleculeResponse:
+    def update(
+        self, obj_id: int, molecule_request: MoleculeUpdateRequest
+    ) -> MoleculeResponse:
         """
         Update a molecule with the given id.
         This is suitable for put request
