@@ -29,7 +29,7 @@ class RedisCacheServiceSingleton:
         self.redis_client = redis_client
 
     @classmethod
-    def create(cls, redis_client: redis.Redis):
+    def create(cls, redis_client: redis.Redis) -> "RedisCacheServiceSingleton":
         """
         Overwrites the current instance
         """
@@ -48,21 +48,42 @@ class RedisCacheServiceSingleton:
             cls.create(get_redis_client())
         return cls.__INSTANCE
 
-    def set_json(self, key, value: dict, expiration_seconds: int = None):
+    def set_json(self, key, value: dict, expiration_seconds: int = CACHE_EXPIRATION) -> None:
+        """
+        :param key:  the key to be used in the cache
+        :param value:  the value to be cached
+        :param expiration_seconds:  after this, cache will be expired, defaults to CachingService.CACHE_EXPIRATION
+        """
         self.redis_client.json().set(key, ".", value)
-        self.redis_client.expire(key, expiration_seconds or self.CACHE_EXPIRATION)
+        self.redis_client.expire(key, expiration_seconds)
 
     def get_json(self, key) -> dict:
+        """
+        :param key:  the key to be used in the cache
+        :return:  the value from the cache, if it exists, otherwise None
+        """
         return self.redis_client.json().get(key, ".")
 
     @staticmethod
-    def generate_caching_key(key_prefix: str, key_args: list[str], **kwargs) -> str:
+    def generate_caching_key(key_prefix: str, key_args: list[str], **possible_args) -> str:
+        """
+        Generate a key for caching
+
+        For example, if prefix is
+        domain1 and key_args is ["id"], and possible_args is {"id": 1, "name": "test"}, the key will be domain1:id=1
+        but if key_args is None, the key will be domain1:id=1:name=test
+
+        :param key_prefix: first part of the key like in get_molecule:1, get_molecule is the key_prefix
+        :param key_args: Names of arguments in possible_args that should be included in the key.
+        :param possible_args: all arguments that are discussable to be included in the key
+        :return: unique key for caching
+        """
         # filter out None values and those that are not in key_args also, it is important to sort the kwargs
         # according to argument name to make sure that the key is always the same, regardless of the order
         filtered_sorted_kwargs_tuples = sorted(
             [
                 (k, v)
-                for k, v in kwargs.items()
+                for k, v in possible_args.items()
                 if v is not None and (not key_args or k in key_args)
             ]
         )
@@ -89,7 +110,8 @@ def cached(
     :param ignore_self: Useful for instance methods, if True, self is ignored in the caching key, even if it is included
     in the key_args
     :param map_return: a function that maps the return value before caching, useful for model serialization, if
-    the return type is not json_serializable for redis client
+    the return type is not json_serializable for redis client. One use case in my app is to map MoleculeResponse
+    to MolecularResponse.model_dump, otherwise, redis client throws an exception
     """
     def wrapper(func):
         @functools.wraps(func)
@@ -98,14 +120,19 @@ def cached(
             bound_args = inspect.signature(func).bind(*args, **kwargs)
             bound_args.apply_defaults()
             keyword_arguments = dict(bound_args.arguments)
+
+            # using ignore_self
             if ignore_self and "self" in keyword_arguments:
                 keyword_arguments.pop("self", None)
 
+            # if expiration_seconds is None, use the default value
             if expiration_seconds is None:
                 expiration_seconds_ = RedisCacheServiceSingleton.CACHE_EXPIRATION
             else:
                 expiration_seconds_ = expiration_seconds
 
+            # setting the prefix for caching key, be careful, do not include functions with the same name
+            # in the same module, because the key will be the same
             if key_prefix is None:
                 prefix = func.__name__
             else:

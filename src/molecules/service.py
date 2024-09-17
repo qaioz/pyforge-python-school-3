@@ -22,7 +22,7 @@ from src.molecules.schema import (
     MoleculeRequest,
     SearchParams,
     get_search_params,
-    MoleculeCollectionResponse,
+    MoleculeCollectionResponse, MoleculeResponse,
 )
 from src.molecules.utils import (
     get_chem_molecule_from_smiles_or_raise_exception,
@@ -37,13 +37,14 @@ logger = logging.getLogger(__name__)
 
 
 class MoleculeService:
+    # required columns in the CSV file
     required_columns = {"smiles", "name"}
 
     def __init__(self, repository: MoleculeRepository, session_factory: sessionmaker):
         self._repository = repository
         self._session_factory = session_factory
 
-    def find_by_id(self, obj_id: int):
+    def find_by_id(self, obj_id: int) -> MoleculeResponse:
         """
         :param obj_id:  molecule id
         :return: found molecule
@@ -57,7 +58,7 @@ class MoleculeService:
             ans = mapper.model_to_response(mol)
             return ans
 
-    def save(self, molecule_request: MoleculeRequest):
+    def save(self, molecule_request: MoleculeRequest) -> MoleculeResponse:
         """
         Save a new molecule to the database. If the smiles is not unique,
         the database will raise an exception, which is caught and re-raised
@@ -80,9 +81,9 @@ class MoleculeService:
                 session.rollback()  # Rollback in case of error
                 if "unique constraint" in str(e).lower():
                     raise DuplicateSmilesException(molecule_request.smiles) from e
-                raise
+                raise e
 
-    def update(self, obj_id: int, molecule_request: MoleculeUpdateRequest):
+    def update(self, obj_id: int, molecule_request: MoleculeUpdateRequest) -> MoleculeResponse:
         """
         Update a molecule with the given id.
         This is suitable for put request
@@ -99,12 +100,11 @@ class MoleculeService:
 
             mol.name = molecule_request.name
             session.commit()
-            ans = mapper.model_to_response(mol)
-            return ans
+            return mapper.model_to_response(mol)
 
     def find_all(
         self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
-    ):
+    ) -> MoleculeCollectionResponse:
         """
         Find all molecules in the database. Can be paginated. Default page size is 1000.
 
@@ -238,7 +238,7 @@ class MoleculeService:
 
         return res
 
-    def process_csv_file(self, file: UploadFile):
+    def process_csv_file(self, file: UploadFile) -> int:
         """
         Process a CSV file and add molecules to the database. The CSV file must have the following columns:
 
@@ -278,7 +278,7 @@ class MoleculeService:
 
         return number_of_molecules_added
 
-    def bulk_insert_from_file(self, file: UploadFile):
+    def bulk_insert_from_file(self, file: UploadFile) -> int:
         """
         Bulk insert molecules from a CSV file. Similar to process_csv_file, but no rows are
         validated and there is no
@@ -306,7 +306,7 @@ class MoleculeService:
             added_molecules += res
         return added_molecules
 
-    def __validate_csv_header_columns(self, columns: set[str]):
+    def __validate_csv_header_columns(self, columns: set[str]) -> None:
         """
         :param columns:
         :return:
@@ -316,7 +316,7 @@ class MoleculeService:
         if missing_columns:
             raise InvalidCsvHeaderColumnsException(missing_columns)
 
-    def __iterate_on_find_all(self, page_size: int = 100):
+    def __iterate_on_find_all(self, page_size: int = 100) -> MoleculeResponse:
         """
         This is a helper method that will be used in substructure search methods, or other search methods implemented
         int the future.

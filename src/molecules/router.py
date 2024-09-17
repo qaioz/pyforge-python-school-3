@@ -24,7 +24,7 @@ router = APIRouter()
     "/",
     status_code=201,
     responses={
-        # status.HTTP_201_CREATED: {"model": MoleculeResponse},
+        status.HTTP_201_CREATED: {"model": MoleculeResponse},
         status.HTTP_400_BAD_REQUEST: {
             "model": str,
             "description": "Probably due to Invalid SMILES string, or smiles uniqueness violation",
@@ -42,7 +42,7 @@ def add_molecule(
     "/{molecule_id}",
     status_code=200,
     responses={
-        # status.HTTP_200_OK: {"model": MoleculeResponse},
+        status.HTTP_200_OK: {"model": MoleculeResponse},
         status.HTTP_404_NOT_FOUND: {
             "model": str,
             "description": "Molecule with the given ID not found",
@@ -59,6 +59,7 @@ def get_molecule(
         str | None, Header(description="Currently supported values: no-cache")
     ] = None,
 ):
+    # Do not be confused, cache_control argument seems unused, but it is read by the cached decorator
     return service.find_by_id(molecule_id)
 
 
@@ -66,7 +67,7 @@ def get_molecule(
     "/",
     status_code=200,
     responses={
-        # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
+        status.HTTP_200_OK: {"model": MoleculeCollectionResponse},
     },
 )
 @cached(key_args=["pagination", "search_params"], map_return=lambda res: res.model_dump())
@@ -96,7 +97,7 @@ def get_molecules(
     "/{molecule_id}/",
     status_code=200,
     responses={
-        # status.HTTP_200_OK: {"model": MoleculeResponse},
+        status.HTTP_200_OK: {"model": MoleculeResponse},
         status.HTTP_404_NOT_FOUND: {
             "model": str,
             "description": "Molecule with the given ID not found",
@@ -141,7 +142,7 @@ def delete_molecule(
 @router.get(
     "/search/substructures/",
     responses={
-        # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
+        status.HTTP_200_OK: {"model": MoleculeCollectionResponse},
         status.HTTP_400_BAD_REQUEST: {
             "model": str,
             "description": "Probably due to Invalid SMILES string",
@@ -164,7 +165,7 @@ def substructure_search(
     cache_control: Annotated[
         str | None, Header(description="Currently supported values: no-cache")
     ] = None,
-):
+) -> MoleculeCollectionResponse:
     """
     Find all molecules that ARE SUBSTRUCTURES of the given smile, not vice vera.
     """
@@ -196,14 +197,15 @@ def substructure_search_of(
             description="Stop searching after finding this many molecules",
         ),
     ] = 1000,
-):
+) -> MoleculeCollectionResponse:
     """
     Find all molecules that the given smile IS SUBSTRUCTURE OF, not vice vera.
     """
     return service.get_superstructures(smiles, limit)
 
 
-@router.post("/upload/", status_code=status.HTTP_201_CREATED)
+@router.post("/upload/", status_code=status.HTTP_201_CREATED,
+             responses={status.HTTP_201_CREATED: {"model": dict[str, int]}})
 def upload_molecules(
     file: UploadFile,
     service: Annotated[MoleculeService, Depends(get_molecule_service)],
@@ -213,13 +215,15 @@ def upload_molecules(
             description="Validate rows before saving, makes slow. False if a 1000 times faster but unsafe"
         ),
     ] = True,
-):
+) -> dict[str, int]:
     """
     Upload a CSV file containing molecules to the repository.
 
     The CSV file should have the following columns: smiles,name
 
     Lines that have incorrect format, missing smiles string or invalid smiles string are ignored.
+
+    Based on the validate_rows parameter, two different methods are used to process the CSV file
     """
 
     # Uploaded CSV file is not stored on the server, only the molecules are extracted and stored in the memory.
