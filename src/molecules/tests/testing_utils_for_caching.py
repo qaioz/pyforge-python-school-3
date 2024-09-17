@@ -1,11 +1,7 @@
 from unittest import mock
 
-from src.redis import RedisCacheService
 
-
-def assert_set_json_called_with_url(
-    client, redis: RedisCacheService, url, should_be_called, headers=None
-):
+def assert_set_json_called_with_url(client, redis, url, should_be_called, headers=None):
     """
     This is helpful method fot **UNIT** testing the caching mechanism.
 
@@ -15,6 +11,7 @@ def assert_set_json_called_with_url(
     that is very hard and requires a lot of mocking of implementation details. Instead, correctness will be easily
     checked in the integration tests.
 
+    :param headers:
     :param client: TestClient instance
     :param redis: Instance of the RedisCacheService
     :param url: URL to be tested
@@ -34,9 +31,7 @@ def assert_set_json_called_with_url(
             mock_set.assert_not_called()
 
 
-def assert_key_exists_in_cache(
-    redis_cache_service: RedisCacheService, key, should_exist
-):
+def assert_key_exists_in_cache(redis_cache_service, key, should_exist):
     """
     Check if a key exists in the cache or not.
     """

@@ -12,6 +12,8 @@ services:
       - ${DB_PORT}:5432
     volumes:
         - db_data:/var/lib/postgresql/data
+    env_file:
+      - .env_prod
 
   redis:
     image: redis/redis-stack
