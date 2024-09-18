@@ -1,5 +1,6 @@
 from typing import Annotated
 from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter
+
 from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,
@@ -12,9 +13,9 @@ from src.schema import (
     PaginationQueryParams,
     get_pagination_query_params,
     MoleculeUpdateRequest,
-    Link,
 )
 from src.molecules.service import MoleculeService
+from src.tasks import substructure_search_task
 
 router = APIRouter()
 
@@ -83,36 +84,11 @@ def get_molecules(
 
     """
 
-    data = service.find_all(pagination.page, pagination.page_size, search_params)
-
-    return MoleculeCollectionResponse.model_validate(
-        {
-            "total": len(data),
-            "page": pagination.page,
-            "page_size": pagination.page_size,
-            "data": data,
-            "links": {
-                "next_page": Link.model_validate(
-                    {
-                        "href": f"/molecules?page={pagination.page + 1}&pageSize={pagination.page_size}",
-                        "rel": "nextPage",
-                        "type": "GET",
-                    }
-                ),
-                "prev_page": Link.model_validate(
-                    {
-                        "href": f"/molecules?page={max(0, pagination.page - 1)}&pageSize={pagination.page_size}",
-                        "rel": "prevPage",
-                        "type": "GET",
-                    }
-                ),
-            },
-        }
-    )
+    return service.find_all(pagination.page, pagination.page_size, search_params)
 
 
 @router.patch(
-    "/{molecule_id}",
+    "/{molecule_id}/",
     status_code=200,
     responses={
         # status.HTTP_200_OK: {"model": MoleculeResponse},
@@ -138,7 +114,7 @@ def update_molecule(
 
 
 @router.delete(
-    "/{molecule_id}",
+    "/{molecule_id}/",
     status_code=200,
     responses={
         status.HTTP_200_OK: {"description": "Molecule deleted successfully"},
@@ -158,9 +134,10 @@ def delete_molecule(
 
 
 @router.get(
-    "/search/substructures",
+    "/search/substructures/",
+    status_code=202,
     responses={
-        # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
+        status.HTTP_202_ACCEPTED: {"model": dict[str, str]},
         status.HTTP_400_BAD_REQUEST: {
             "model": str,
             "description": "Probably due to Invalid SMILES string",
@@ -183,11 +160,12 @@ def substructure_search(
     """
     Find all molecules that ARE SUBSTRUCTURES of the given smile, not vice vera.
     """
-    return service.get_substructures(smiles, limit)
+    task = substructure_search_task.delay(smiles, limit)
+    return {"task_id": task.id}
 
 
 @router.get(
-    "/search/superstructures",
+    "/search/superstructures/",
     responses={
         # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
         status.HTTP_400_BAD_REQUEST: {
@@ -218,10 +196,16 @@ def substructure_search_of(
     return service.get_superstructures(smiles, limit)
 
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED)
+@router.post("/upload/", status_code=status.HTTP_201_CREATED)
 def upload_molecules(
     file: UploadFile,
     service: Annotated[MoleculeService, Depends(get_molecule_service)],
+    validate_rows: Annotated[
+        bool,
+        Query(
+            description="Validate rows before saving, makes slow. False if a 1000 times faster but unsafe"
+        ),
+    ] = True,
 ):
     """
     Upload a CSV file containing molecules to the repository.
@@ -232,6 +216,8 @@ def upload_molecules(
     """
 
     # Uploaded CSV file is not stored on the server, only the molecules are extracted and stored in the memory.
-
-    res = service.process_csv_file(file)
+    if validate_rows:
+        res = service.process_csv_file(file)
+    else:
+        res = service.bulk_insert_from_file(file)
     return {"number_of_molecules_added": res}

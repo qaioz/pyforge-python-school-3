@@ -2,8 +2,11 @@ import csv
 import io
 import logging
 from functools import lru_cache
-from fastapi import UploadFile
+from typing import Annotated
+
+from fastapi import UploadFile, Depends
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
 
 from src.exception import UnknownIdentifierException
 from src.molecules.exception import (
@@ -17,9 +20,10 @@ from src.molecules.repository import (
 )
 from src.molecules.schema import (
     MoleculeRequest,
-    MoleculeResponse,
     SearchParams,
     get_search_params,
+    MoleculeCollectionResponse,
+    MoleculeResponse,
 )
 from src.molecules.utils import (
     get_chem_molecule_from_smiles_or_raise_exception,
@@ -28,34 +32,34 @@ from src.molecules.utils import (
 )
 from src.database import get_session_factory
 from src.molecules import mapper
-from src.schema import MoleculeUpdateRequest
+from src.schema import MoleculeUpdateRequest, Link
 
 logger = logging.getLogger(__name__)
 
 
 class MoleculeService:
+    # required columns in the CSV file
     required_columns = {"smiles", "name"}
 
-    def __init__(self, repository: MoleculeRepository, session_factory):
+    def __init__(self, repository: MoleculeRepository, session_factory: sessionmaker):
         self._repository = repository
         self._session_factory = session_factory
 
-    def find_by_id(self, obj_id: int):
+    def find_by_id(self, obj_id: int) -> MoleculeResponse:
         """
-        Find a molecule by its id. Calls exists_by_id to check if the molecule exists, resulting in two database calls.
-        Not vert impressive, but I am trying to keep it simple.
-
         :param obj_id:  molecule id
         :return: found molecule
         :raises UnknownIdentifierException: if the molecule with the given id does not exist
         """
+
         with self._session_factory() as session:
             mol = self._repository.find_by_id(obj_id, session)
             if mol is None:
                 raise UnknownIdentifierException(obj_id)
-            return mapper.model_to_response(mol)
+            ans = mapper.model_to_response(mol)
+            return ans
 
-    def save(self, molecule_request: MoleculeRequest):
+    def save(self, molecule_request: MoleculeRequest) -> MoleculeResponse:
         """
         Save a new molecule to the database. If the smiles is not unique,
         the database will raise an exception, which is caught and re-raised
@@ -78,9 +82,11 @@ class MoleculeService:
                 session.rollback()  # Rollback in case of error
                 if "unique constraint" in str(e).lower():
                     raise DuplicateSmilesException(molecule_request.smiles) from e
-                raise
+                raise e
 
-    def update(self, obj_id: int, molecule_request: MoleculeUpdateRequest):
+    def update(
+        self, obj_id: int, molecule_request: MoleculeUpdateRequest
+    ) -> MoleculeResponse:
         """
         Update a molecule with the given id.
         This is suitable for put request
@@ -97,12 +103,11 @@ class MoleculeService:
 
             mol.name = molecule_request.name
             session.commit()
-            ans = mapper.model_to_response(mol)
-            return ans
+            return mapper.model_to_response(mol)
 
     def find_all(
         self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
-    ):
+    ) -> MoleculeCollectionResponse:
         """
         Find all molecules in the database. Can be paginated. Default page size is 1000.
 
@@ -111,12 +116,40 @@ class MoleculeService:
         :param page_size: Items per page, default is 1000
         :return: List of all molecules
         """
+
         with self._session_factory() as session:
             molecules = self._repository.find_all(
                 session, page, page_size, search_params
             )
 
-            return [mapper.model_to_response(mol) for mol in molecules]
+            data = [mapper.model_to_response(mol) for mol in molecules]
+
+            res = MoleculeCollectionResponse.model_validate(
+                {
+                    "total": len(data),
+                    "page": page,
+                    "page_size": page_size,
+                    "data": data,
+                    "links": {
+                        "next_page": Link.model_validate(
+                            {
+                                "href": f"/molecules?page={page + 1}&pageSize={page_size}",
+                                "rel": "nextPage",
+                                "type": "GET",
+                            }
+                        ),
+                        "prev_page": Link.model_validate(
+                            {
+                                "href": f"/molecules?page={max(0, page - 1)}&pageSize={page_size}",
+                                "rel": "prevPage",
+                                "type": "GET",
+                            }
+                        ),
+                    },
+                }
+            )
+
+            return res
 
     def delete(self, obj_id: int) -> bool:
         """
@@ -136,7 +169,7 @@ class MoleculeService:
 
     def get_substructures(
         self, smiles: str, limit: int = 1000
-    ) -> list[MoleculeResponse]:
+    ) -> MoleculeCollectionResponse:
         """
         Find all molecules that are substructures of the given smiles.
 
@@ -147,19 +180,32 @@ class MoleculeService:
         """
 
         mol = get_chem_molecule_from_smiles_or_raise_exception(smiles)
+
+        data = []
         find_all = self.__iterate_on_find_all()
         count = 0
-
         for molecule in find_all:
             if mol.HasSubstructMatch(get_chem_service().get_chem(molecule.smiles)):
-                yield mapper.model_to_response(molecule)
+                data.append(mapper.model_to_response(molecule))
                 count += 1
                 if limit is not None and count >= limit:
                     break
 
+        res = MoleculeCollectionResponse.model_validate(
+            {
+                "total": len(data),
+                "page": 0,
+                "page_size": limit,
+                "data": data,
+                "links": {},
+            }
+        )
+
+        return res
+
     def get_superstructures(
         self, smiles: str, limit: int = 1000
-    ) -> list[MoleculeResponse]:
+    ) -> MoleculeCollectionResponse:
         """
         Find all the molecules that this molecule is a substructure of.
 
@@ -170,17 +216,32 @@ class MoleculeService:
         """
 
         mol = get_chem_molecule_from_smiles_or_raise_exception(smiles)
+
+        data = []
+
         find_all = self.__iterate_on_find_all()
         count = 0
 
         for molecule in find_all:
             if get_chem_service().get_chem(molecule.smiles).HasSubstructMatch(mol):
-                yield mapper.model_to_response(molecule)
+                data.append(mapper.model_to_response(molecule))
                 count += 1
                 if limit is not None and count >= limit:
                     break
 
-    def process_csv_file(self, file: UploadFile):
+        res = MoleculeCollectionResponse.model_validate(
+            {
+                "total": len(data),
+                "page": 0,
+                "page_size": limit,
+                "data": data,
+                "links": {},
+            }
+        )
+
+        return res
+
+    def process_csv_file(self, file: UploadFile) -> int:
         """
         Process a CSV file and add molecules to the database. The CSV file must have the following columns:
 
@@ -220,7 +281,35 @@ class MoleculeService:
 
         return number_of_molecules_added
 
-    def __validate_csv_header_columns(self, columns: set[str]):
+    def bulk_insert_from_file(self, file: UploadFile) -> int:
+        """
+        Bulk insert molecules from a CSV file. Similar to process_csv_file, but no rows are
+        validated and there is no
+
+        //TODO this method is written in a rush, I will test adn revise many things, but works
+        :param file:
+        :return:
+        """
+
+        csv_reader = csv.DictReader(io.TextIOWrapper(file.file, encoding="utf-8"))
+        self.__validate_csv_header_columns(set(csv_reader.fieldnames))
+        molecules = []
+        added_molecules = 0
+        for row in csv_reader:
+            molecules.append({"smiles": row["smiles"], "name": row["name"]})
+            if len(molecules) == 500:
+                with self._session_factory() as session:
+                    res = self._repository.bulk_insert(session, molecules)
+                    session.commit()
+                    added_molecules += res
+                    molecules = []
+        with self._session_factory() as session:
+            res = self._repository.bulk_insert(session, molecules)
+            session.commit()
+            added_molecules += res
+        return added_molecules
+
+    def __validate_csv_header_columns(self, columns: set[str]) -> None:
         """
         :param columns:
         :return:
@@ -230,7 +319,7 @@ class MoleculeService:
         if missing_columns:
             raise InvalidCsvHeaderColumnsException(missing_columns)
 
-    def __iterate_on_find_all(self, page_size: int = 100):
+    def __iterate_on_find_all(self, page_size: int = 100) -> MoleculeResponse:
         """
         This is a helper method that will be used in substructure search methods, or other search methods implemented
         int the future.
@@ -262,5 +351,8 @@ class MoleculeService:
 
 
 @lru_cache
-def get_molecule_service():
-    return MoleculeService(get_molecule_repository(), get_session_factory())
+def get_molecule_service(
+    repository: Annotated[MoleculeRepository, Depends(get_molecule_repository)],
+    session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
+):
+    return MoleculeService(repository, session_factory)

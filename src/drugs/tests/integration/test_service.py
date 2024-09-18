@@ -2,7 +2,7 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from src.config import get_settings
+from src.config import get_test_settings
 from src.drugs.repository import DrugRepository
 from src.drugs.service import DrugService
 from src.database import Base
@@ -11,11 +11,10 @@ from src.molecules.repository import MoleculeRepository
 from src.molecules.service import MoleculeService
 import src.drugs.tests.sample_data as sample_data
 
-engine = create_engine(get_settings().TEST_DB_URL)
+engine = create_engine(get_test_settings().database_url)
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 repository = DrugRepository()
 service = DrugService(repository, session_factory)
-
 molecule_repository = MoleculeRepository()
 molecule_service = MoleculeService(molecule_repository, session_factory)
 

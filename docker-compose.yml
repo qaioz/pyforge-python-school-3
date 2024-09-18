@@ -8,34 +8,52 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - ${DB_PORT}:5432
     volumes:
         - db_data:/var/lib/postgresql/data
 
+  redis:
+    image: redis/redis-stack
+    ports:
+      - ${REDIS_PORT}:6379
+
+  celery_worker:
+    build: .
+    environment:
+        ENVIRONMENT: PROD
+    entrypoint: celery -A src.celery_worker worker --loglevel=info
+    depends_on:
+      - redis
+      - postgres
+
+  flower:
+    build: .
+    environment:
+        ENVIRONMENT: PROD
+    entrypoint: celery -A src.celery_worker flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - celery_worker
 
   web1:
     build: .
     image: app
     environment:
       SERVER_ID: SERVER-1
-      DB_HOST: postgres
-      DEV_MODE: FALSE
-      TEST_MODE: FALSE
+      ENVIRONMENT: PROD
     depends_on:
       - postgres
+      - redis
     entrypoint: ["/bin/sh", "-c", "alembic upgrade head && fastapi run src/main.py"]
 
   web2:
     image: app
     environment:
       SERVER_ID: SERVER-2
-      DB_HOST: postgres
-      DEV_MODE: FALSE
-      TEST_MODE: FALSE
+      ENVIRONMENT: PROD
     depends_on:
-      - postgres
       - web1
+
 
 # The reason why I did not use the build option for web2 is that It will result
 # in the creation of a new image for web2, which is not really a problem(memory-wise layer architecture saves space),

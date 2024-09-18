@@ -1,30 +1,32 @@
+from unittest.mock import Mock
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from starlette.testclient import TestClient
-from src.config import get_settings
+from src.config import get_test_settings
 from src.drugs.repository import DrugRepository
 from src.drugs.service import DrugService
-from src.drugs.service import get_drug_service
 from src.main import app
 from src.molecules.repository import MoleculeRepository
-from src.molecules.service import MoleculeService, get_molecule_service
+from src.molecules.service import MoleculeService
 from src.drugs.tests import sample_data
-from src.database import Base
+from src.database import Base, get_database_url
 
-engine = create_engine(get_settings().TEST_DB_URL)
+engine = create_engine(get_test_settings().database_url)
 
 session_factory = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 drug_repository = DrugRepository()
 drug_service = DrugService(drug_repository, session_factory)
-
+mock_redis_cache_service = Mock()
+# mock the cached method to be a function that returns the function passed to it
+mock_redis_cache_service.cached.wrapper = lambda func: func
 mol_repository = MoleculeRepository()
 molecule_service = MoleculeService(mol_repository, session_factory)
 
 test_client = TestClient(app)
 
-app.dependency_overrides[get_drug_service] = lambda: drug_service
-app.dependency_overrides[get_molecule_service] = lambda: molecule_service
+app.dependency_overrides[get_database_url] = lambda: get_test_settings().database_url
 
 
 @pytest.fixture

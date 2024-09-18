@@ -1,11 +1,14 @@
 from functools import lru_cache
 
-from sqlalchemy import text
+from sqlalchemy import text, insert
 from sqlmodel import Session
 
 from src.molecules.model import Molecule
 from src.molecules.schema import SearchParams
 from src.repository import SQLAlchemyRepository
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MoleculeRepository(SQLAlchemyRepository):
@@ -71,6 +74,23 @@ class MoleculeRepository(SQLAlchemyRepository):
             """
 
         return session.execute(text(query)).all()
+
+    def bulk_insert(self, session: Session, data: list):
+        """
+        returns the int number of added rows, commits automatically
+
+        //TODO: I was in rush for deadline, I will implement a better way to handle errors and let the user know what
+        went wrong.
+        """
+        data = [{"mass": len(d["smiles"]), **d} for d in data]
+        try:
+            session.execute(insert(Molecule), data)
+            session.flush()
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error inserting data, no molecules will be added {e}")
+
+        return len(data)
 
 
 @lru_cache

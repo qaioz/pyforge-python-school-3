@@ -31,7 +31,7 @@ def drug_to_response(drug: Drug) -> DrugResponse:
                 molecule_id=molecule.molecule_id,
                 quantity=molecule.quantity,
                 quantity_unit=molecule.quantity_unit,
-                links={}
+                links={},
             )
         )
 
@@ -40,5 +40,5 @@ def drug_to_response(drug: Drug) -> DrugResponse:
         name=drug.name,
         description=drug.description,
         molecules=molecule_responses,
-        links={}
+        links={},
     )

@@ -1,3 +1,4 @@
+import datetime
 from typing import Annotated, Optional
 from pydantic import BaseModel, Field
 from src.schema import BaseResponse
@@ -64,6 +65,13 @@ class DrugMoleculeResponse(BaseResponse):
     molecule_id: Annotated[int, Field()]
     quantity: Annotated[float, Field()]
     quantity_unit: Annotated[QuantityUnit, Field()]
+
+    created_at: Annotated[
+        datetime.datetime, Field(description="Timestamp when the entity was created")
+    ] = None
+    updated_at: Annotated[
+        datetime.datetime, Field(description="Timestamp when the entity was updated")
+    ] = None
 
     model_config = {
         # "json_encoders": {
