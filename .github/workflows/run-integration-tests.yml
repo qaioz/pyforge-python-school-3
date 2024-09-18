@@ -1,0 +1,58 @@
+name: Run integration tests with coverage
+# This tests require a postgres database for running.
+# Let's say, Integration tests should cover at least 95% of the codebase
+# I added the --cov-fail-under=95 option
+
+on:
+  push:
+    branches:
+      - main
+      - develop/drugs_and_molecules
+
+  pull_request:
+    branches:
+      - develop/drugs_and_molecules
+
+
+
+jobs:
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 54321:5432
+
+      redis:
+        image: "redis/redis-stack"
+        ports:
+          - "6371:6379"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+
+      - name: Install dependencies for testing
+        run: |
+          pip install -r requirements.txt
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=src --cov-fail-under=80
+        env:
+          ENVIRONMENT: TEST
+          TEST_DB_URL: postgresql://test_user:test_password@localhost:54321/test_db
+          REDIS_HOST: localhost
+          TEST_REDIS_PORT: 6371
+
