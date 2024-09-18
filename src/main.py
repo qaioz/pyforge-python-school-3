@@ -5,6 +5,7 @@ from src.drugs.router import router as drug_router
 from src.handler import register_exception_handlers
 from src.config import setup_logging
 from src.celery_worker import celery
+
 setup_logging()
 
 app = FastAPI()

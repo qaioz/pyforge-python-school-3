@@ -6,26 +6,24 @@ services:
     image: "redis/redis-stack"
     container_name: redis_test
     ports:
-      - ${REDIS_PORT}:6379
-    env_file:
-      - .env_test
+      - "6371:6379"
     networks:
       - test_network
 
   postgres:
     image: postgres
     container_name: db_molecules_fastapi_test
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - ${DB_PORT}:5432
-    env_file:
-      - .env_test
 
+    environment:
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: test_db
+    ports:
+      - "54321:5432"
     networks:
-        - test_network
+      - test_network
+
+
 
 networks:
     test_network:

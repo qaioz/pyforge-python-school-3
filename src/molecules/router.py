@@ -15,8 +15,7 @@ from src.schema import (
     MoleculeUpdateRequest,
 )
 from src.molecules.service import MoleculeService
-from src.celery_worker import substructure_search_task
-
+from src.tasks import substructure_search_task
 router = APIRouter()
 
 

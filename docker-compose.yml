@@ -8,12 +8,8 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - ${DB_PORT}:5432
     volumes:
         - db_data:/var/lib/postgresql/data
-    env_file:
-      - .env_prod
 
   redis:
     image: redis/redis-stack
@@ -22,18 +18,29 @@ services:
 
   celery_worker:
     build: .
-    entrypoint: celery -A app.celery_worker worker --loglevel=info
+    environment:
+        ENVIRONMENT: PROD
+    entrypoint: celery -A src.celery_worker worker --loglevel=info
     depends_on:
       - redis
+      - postgres
+
+  flower:
+    build: .
+    environment:
+        ENVIRONMENT: PROD
+    entrypoint: celery -A src.celery_worker flower --port=5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - celery_worker
 
   web1:
     build: .
     image: app
     environment:
       SERVER_ID: SERVER-1
-      DB_HOST: postgres
-      DEV_MODE: FALSE
-      TEST_MODE: FALSE
+      ENVIRONMENT: PROD
     depends_on:
       - postgres
       - redis
@@ -43,11 +50,10 @@ services:
     image: app
     environment:
       SERVER_ID: SERVER-2
-      DB_HOST: postgres
-      DEV_MODE: FALSE
-      TEST_MODE: FALSE
+      ENVIRONMENT: PROD
     depends_on:
       - web1
+
 
 # The reason why I did not use the build option for web2 is that It will result
 # in the creation of a new image for web2, which is not really a problem(memory-wise layer architecture saves space),

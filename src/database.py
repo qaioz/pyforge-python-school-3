@@ -1,9 +1,9 @@
 from datetime import datetime
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends
-from sqlalchemy import func, create_engine
+from sqlalchemy import func, create_engine, Engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     declared_attr,
@@ -31,8 +31,8 @@ class Base(DeclarativeBase):
     updated_at: Mapped[updated_at]
 
 
-def get_database_url(settings: Annotated[get_settings, Depends(get_settings)]):
-    return settings.database_url
+def get_database_url():
+    return get_settings().database_url
 
 
 @lru_cache
@@ -42,6 +42,6 @@ def get_database_engine(database_url: Annotated[str, Depends(get_database_url)])
 
 @lru_cache
 def get_session_factory(
-    database_engine: Annotated[get_database_engine, Depends(get_database_engine)]
+    database_engine: Annotated[Engine, Depends(get_database_engine)]
 ):
     return sessionmaker(bind=database_engine, autoflush=False, autocommit=False)

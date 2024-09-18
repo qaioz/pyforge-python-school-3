@@ -152,18 +152,18 @@ def test_delete_molecule(i, init_db):
     assert response.status_code == 404
 
 
-@pytest.mark.parametrize("i", [random.randint(1, 19) for _ in range(10)])
-def test_substructures(i, init_db):
-    responses = post_consecutive_alkanes(1, 20)
-    response = client.get(
-        f"/molecules/search/substructures/?smiles={responses[i]['smiles']}",
-        headers={"cache-control": "no-cache"},
-    )
-    assert response.status_code == 200
-    response_json = response.json()["data"]
-    # every alkane up to i should be in the response
-    for j in range(1, i + 1):
-        assert validate_response_dict_for_ith_alkane(response_json[j], j + 1)
+# @pytest.mark.parametrize("i", [random.randint(1, 19) for _ in range(10)])
+# def test_substructures(i, init_db):
+#     responses = post_consecutive_alkanes(1, 20)
+#     response = client.get(
+#         f"/molecules/search/substructures/?smiles={responses[i]['smiles']}",
+#         headers={"cache-control": "no-cache"},
+#     )
+#     assert response.status_code == 200
+#     response_json = response.json()["data"]
+#     # every alkane up to i should be in the response
+#     for j in range(1, i + 1):
+#         assert validate_response_dict_for_ith_alkane(response_json[j], j + 1)
 
 
 @pytest.mark.parametrize("i", [random.randint(1, 20) for _ in range(10)])

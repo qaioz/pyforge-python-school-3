@@ -16,7 +16,3 @@ molecule_service = get_molecule_service(
 def substructure_search_task(smiles: str, limit: int):
     return molecule_service.get_substructures(smiles, limit).model_dump()
 
-
-@celery_app.task
-def add(x, y):
-    return x + y

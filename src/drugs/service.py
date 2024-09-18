@@ -2,6 +2,8 @@ from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import sessionmaker
+
 from src.drugs import mapper
 from src.drugs.repository import DrugRepository, get_drug_repository
 from src.drugs.schema import DrugRequest, DrugResponse
@@ -68,7 +70,7 @@ class DrugService:
 def get_drug_service(
     drug_repository: Annotated[DrugRepository, Depends(get_drug_repository)],
     session_factory: Annotated[
-        Depends(get_session_factory), Depends(get_session_factory)
+        sessionmaker, Depends(get_session_factory)
     ],
 ):
     return DrugService(drug_repository, session_factory=session_factory)

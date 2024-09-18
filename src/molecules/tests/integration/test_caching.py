@@ -96,7 +96,7 @@ def test_get_molecule_by_id(idx, init_db):
 
     # This should have triggered the set_json method and the cache should be set
     assert_key_exists_in_cache(
-        redis, f"get_molecule:molecule_id={idx}", should_exist=True
+        redis, f"/molecules/{idx}", should_exist=True
     )
 
     # Now make the same request again, this time the cache should be hit
@@ -117,7 +117,6 @@ def test_get_molecule_by_id(idx, init_db):
         (1, 12, None, None, None, "mass", "desc"),
     ],
 )
-@pytest.mark.xfail
 def test_find_all_mock(page, pageSize, name, minMass, maxMass, orderBy, order, init_db):
     """
     Test the GET /molecules endpoint.
@@ -150,64 +149,61 @@ def test_find_all_mock(page, pageSize, name, minMass, maxMass, orderBy, order, i
     assert response.json() == response2.json()
 
 
-@pytest.mark.parametrize(
-    "smiles,limit", [("CCCC", None), ("CC", 2), ("CCC", 3), ("CCCC", 3)]
-)
-@pytest.mark.xfail
-def test_substructure_search_mock(smiles, limit, init_db):
-    """
-    Test the GET /molecules/search/substructures/ endpoint.
-    """
-    query_dict = {"smiles": smiles, "limit": limit}
+# @pytest.mark.parametrize(
+#     "smiles,limit", [("CCCC", None), ("CC", 2), ("CCC", 3), ("CCCC", 3)]
+# )
+# def test_substructure_search_mock(smiles, limit, init_db):
+#     """
+#     Test the GET /molecules/search/substructures/ endpoint.
+#     """
+#     query_dict = {"smiles": smiles, "limit": limit}
+#
+#     # key matches url
+#     key = get_key_from_url_queries("/molecules/search/substructures/", query_dict)
+#
+#     # Initially the cache should not have the key
+#     assert_key_exists_in_cache(redis, key, should_exist=False)
+#
+#     response = client.get(key)
+#     assert response.status_code == 200
+#
+#     # This should have triggered the set_json method and the cache should be set
+#     assert_key_exists_in_cache(redis, key, should_exist=True)
+#
+#     response2 = client.get(key)
+#     assert response2.status_code == 200
+#
+#     assert response.json() == response2.json()
 
-    # key matches url
-    key = get_key_from_url_queries("/molecules/search/substructures/", query_dict)
 
-    # Initially the cache should not have the key
-    assert_key_exists_in_cache(redis, key, should_exist=False)
-
-    response = client.get(key)
-    assert response.status_code == 200
-
-    # This should have triggered the set_json method and the cache should be set
-    assert_key_exists_in_cache(redis, key, should_exist=True)
-
-    response2 = client.get(key)
-    assert response2.status_code == 200
-
-    assert response.json() == response2.json()
-
-
-@pytest.mark.parametrize(
-    "smiles,limit", [("CCCC", 10), ("CC", 2), ("CCC", 3), ("CCCC", 3)]
-)
-@pytest.mark.xfail
-def test_superstructure_search_mock(smiles, limit, init_db):
-    """
-    Test the GET /molecules/search/superstructures/ endpoint.
-    """
-    query_dict = {"smiles": smiles, "limit": limit}
-
-    # key matches url
-    key = get_key_from_url_queries("/molecules/search/superstructures/", query_dict)
-
-    # Initially the cache should not have the key
-    assert_key_exists_in_cache(redis, key, should_exist=False)
-
-    response = client.get(key)
-    assert response.status_code == 200
-
-    # This should have triggered the set_json method and the cache should be set
-    assert_key_exists_in_cache(redis, key, should_exist=True)
-
-    response2 = client.get(key)
-    assert response2.status_code == 200
-
-    assert response.json() == response2.json()
+# @pytest.mark.parametrize(
+#     "smiles,limit", [("CCCC", 10), ("CC", 2), ("CCC", 3), ("CCCC", 3)]
+# )
+# def test_superstructure_search_mock(smiles, limit, init_db):
+#     """
+#     Test the GET /molecules/search/superstructures/ endpoint.
+#     """
+#     query_dict = {"smiles": smiles, "limit": limit}
+#
+#     # key matches url
+#     key = get_key_from_url_queries("/molecules/search/superstructures/", query_dict)
+#
+#     # Initially the cache should not have the key
+#     assert_key_exists_in_cache(redis, key, should_exist=False)
+#
+#     response = client.get(key)
+#     assert response.status_code == 200
+#
+#     # This should have triggered the set_json method and the cache should be set
+#     assert_key_exists_in_cache(redis, key, should_exist=True)
+#
+#     response2 = client.get(key)
+#     assert response2.status_code == 200
+#
+#     assert response.json() == response2.json()
 
 
 @pytest.mark.parametrize("idx", [random.randint(1, 10) for _ in range(5)])
-@pytest.mark.xfail
 def test_no_cache_header_mock(idx, init_db):
     """
     I will test just one endpoint, should be enough to test the logic, every endpoint

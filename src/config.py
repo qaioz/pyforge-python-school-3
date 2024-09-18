@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     BACKEND_DB: int
 
     model_config = {
-        "env_file": ".env_prod",
+        "env_file": ".env",
     }
 
     @property
