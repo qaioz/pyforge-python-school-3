@@ -1,9 +1,6 @@
 
 
-# I was using conda environment before but i found it too inconvenient to use with docker
-# So i switched to using pip and requirements.txt
-# This base image example is from fastapi official documentation
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.10
+FROM python:3.12
 # add maintaner information and other important information
 
 LABEL maintainer="gaiozi tabatadzegaga@gmail.com"
@@ -31,3 +28,5 @@ COPY . .
 EXPOSE 8000
 
 ENTRYPOINT ["fastapi", "run", "src/main.py"]
+#ENTRYPOINT ["ls"]
+

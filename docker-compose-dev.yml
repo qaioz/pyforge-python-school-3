@@ -8,27 +8,25 @@ services:
     container_name: redis_dev
     ports:
       - "6370:6379"
+    env_file:
+      - .env_dev
+
 
 
   postgres:
     image: postgres
     container_name: db_molecules_fastapi_dev
+    env_file:
+      - .env_dev
     environment:
       POSTGRES_USER: dev_user
       POSTGRES_PASSWORD: dev_password
       POSTGRES_DB: dev_db
-    ports:
-      - 12345:5432
 
+    ports:
+      - "12345:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
-
-    networks:
-        - dev_network
-
-
-networks:
-    dev_network:
 
 volumes:
     postgres_data_dev:

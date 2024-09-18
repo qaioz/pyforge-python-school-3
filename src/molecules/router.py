@@ -1,5 +1,6 @@
 from typing import Annotated
 from fastapi import Depends, status, Body, Path, Query, UploadFile, APIRouter
+
 from src.molecules.schema import (
     MoleculeRequest,
     MoleculeResponse,
@@ -14,6 +15,7 @@ from src.schema import (
     MoleculeUpdateRequest,
 )
 from src.molecules.service import MoleculeService
+from src.tasks import substructure_search_task
 
 router = APIRouter()
 
@@ -133,8 +135,9 @@ def delete_molecule(
 
 @router.get(
     "/search/substructures/",
+    status_code=202,
     responses={
-        # status.HTTP_200_OK: {"model": list[MoleculeResponse]},
+        status.HTTP_202_ACCEPTED: {"model": dict[str, str]},
         status.HTTP_400_BAD_REQUEST: {
             "model": str,
             "description": "Probably due to Invalid SMILES string",
@@ -157,7 +160,8 @@ def substructure_search(
     """
     Find all molecules that ARE SUBSTRUCTURES of the given smile, not vice vera.
     """
-    return service.get_substructures(smiles, limit)
+    task = substructure_search_task.delay(smiles, limit)
+    return {"task_id": task.id}
 
 
 @router.get(

@@ -1,6 +1,6 @@
-from functools import lru_cache
-
-from pydantic_settings import BaseSettings, SettingsConfigDict
+import enum
+from os import getenv
+from pydantic_settings import BaseSettings
 import logging
 
 
@@ -15,48 +15,78 @@ def setup_logging():
     )
 
 
-class Settings(BaseSettings):
-    SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int
+class Environment(enum.Enum):
+    PROD = "PROD"
+    DEV = "DEV"
+    TEST = "TEST"
 
+
+class Settings(BaseSettings):
     DB_USER: str
     DB_PASSWORD: str
     DB_HOST: str
     DB_PORT: int
     DB_NAME: str
 
-    DEV_MODE: bool
-    TEST_MODE: bool
-    TEST_DB_URL: str
-    DEV_DB_URL: str
-    CONTEXT_PATH: str
-
     REDIS_HOST: str
     REDIS_PORT: int
 
-    REDIS_TEST_PORT: int
+    BROKER_HOST: str
+    BROKER_PORT: int
+    BROKER_DB: int
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        # env_file="/home/gaioz/quantori/pyforge-python-school-3/.env",
-        extra="ignore",
-    )
+    BACKEND_HOST: str
+    BACKEND_PORT: int
+    BACKEND_DB: int
+
+    model_config = {
+        "env_file": ".env",
+    }
 
     @property
-    def database_url(self) -> str:
-        if self.DEV_MODE and self.TEST_MODE:
-            raise ValueError("Cannot run in DEV and TEST mode at the same time")
-
-        if self.DEV_MODE:
-            return self.DEV_DB_URL
-
-        if self.TEST_MODE:
-            return self.TEST_DB_URL
-
+    def database_url(self):
         return f"postgresql://{self.DB_USER}:{self.DB_PASSWORD}@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
 
 
-@lru_cache
-def get_settings() -> Settings:
+class DevSettings(Settings):
+    model_config = {
+        "env_file": ".env_dev",
+    }
+
+
+class TestSettings(Settings):
+    model_config = {
+        "env_file": ".env_test",
+    }
+
+
+def get_prod_settings() -> Settings:
     return Settings()
+
+
+def get_dev_settings() -> DevSettings:
+    return DevSettings()
+
+
+def get_test_settings() -> TestSettings:
+    return TestSettings()
+
+
+def get_settings() -> Settings:
+    environment = getenv("ENVIRONMENT")
+
+    if environment is None:
+        raise ValueError(
+            "ENVIRONMENT environment variable is not set, it should be one of PROD, DEV, TEST"
+        )
+
+    if environment == Environment.PROD.value:
+        return get_prod_settings()
+    elif environment == Environment.DEV.value:
+        return get_dev_settings()
+    elif environment == Environment.TEST.value:
+        return get_test_settings()
+    else:
+        raise ValueError(
+            "ENVIRONMENT environment variable should be one of PROD, DEV, TEST"
+        )

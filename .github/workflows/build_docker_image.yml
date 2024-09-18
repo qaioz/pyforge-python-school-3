@@ -4,6 +4,10 @@ on:
     branches:
       - main
       - develop/drugs_and_molecules
+  pull_request:
+    branches:
+      - main
+      - develop/drugs_and_molecules
 
 jobs:
     build:

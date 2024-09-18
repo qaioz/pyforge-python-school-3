@@ -1,4 +1,3 @@
 **.pytest_cache
 **__pycache__
 # Lets also not include test files, as they are not needed
-**test_*.py

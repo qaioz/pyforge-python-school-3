@@ -23,6 +23,7 @@ from src.molecules.schema import (
     SearchParams,
     get_search_params,
     MoleculeCollectionResponse,
+    MoleculeResponse,
 )
 from src.molecules.utils import (
     get_chem_molecule_from_smiles_or_raise_exception,
@@ -31,24 +32,21 @@ from src.molecules.utils import (
 )
 from src.database import get_session_factory
 from src.molecules import mapper
-from src.redis import RedisCacheService, get_redis_cache_service
 from src.schema import MoleculeUpdateRequest, Link
 
 logger = logging.getLogger(__name__)
 
 
 class MoleculeService:
+    # required columns in the CSV file
     required_columns = {"smiles", "name"}
 
     def __init__(self, repository: MoleculeRepository, session_factory: sessionmaker):
         self._repository = repository
         self._session_factory = session_factory
 
-    def find_by_id(self, obj_id: int):
+    def find_by_id(self, obj_id: int) -> MoleculeResponse:
         """
-        Find a molecule by its id. Calls exists_by_id to check if the molecule exists, resulting in two database calls.
-        Not vert impressive, but I am trying to keep it simple.
-
         :param obj_id:  molecule id
         :return: found molecule
         :raises UnknownIdentifierException: if the molecule with the given id does not exist
@@ -61,7 +59,7 @@ class MoleculeService:
             ans = mapper.model_to_response(mol)
             return ans
 
-    def save(self, molecule_request: MoleculeRequest):
+    def save(self, molecule_request: MoleculeRequest) -> MoleculeResponse:
         """
         Save a new molecule to the database. If the smiles is not unique,
         the database will raise an exception, which is caught and re-raised
@@ -84,9 +82,11 @@ class MoleculeService:
                 session.rollback()  # Rollback in case of error
                 if "unique constraint" in str(e).lower():
                     raise DuplicateSmilesException(molecule_request.smiles) from e
-                raise
+                raise e
 
-    def update(self, obj_id: int, molecule_request: MoleculeUpdateRequest):
+    def update(
+        self, obj_id: int, molecule_request: MoleculeUpdateRequest
+    ) -> MoleculeResponse:
         """
         Update a molecule with the given id.
         This is suitable for put request
@@ -103,12 +103,11 @@ class MoleculeService:
 
             mol.name = molecule_request.name
             session.commit()
-            ans = mapper.model_to_response(mol)
-            return ans
+            return mapper.model_to_response(mol)
 
     def find_all(
         self, page: int = 0, page_size: int = 1000, search_params: SearchParams = None
-    ):
+    ) -> MoleculeCollectionResponse:
         """
         Find all molecules in the database. Can be paginated. Default page size is 1000.
 
@@ -242,7 +241,7 @@ class MoleculeService:
 
         return res
 
-    def process_csv_file(self, file: UploadFile):
+    def process_csv_file(self, file: UploadFile) -> int:
         """
         Process a CSV file and add molecules to the database. The CSV file must have the following columns:
 
@@ -282,7 +281,7 @@ class MoleculeService:
 
         return number_of_molecules_added
 
-    def bulk_insert_from_file(self, file: UploadFile):
+    def bulk_insert_from_file(self, file: UploadFile) -> int:
         """
         Bulk insert molecules from a CSV file. Similar to process_csv_file, but no rows are
         validated and there is no
@@ -310,7 +309,7 @@ class MoleculeService:
             added_molecules += res
         return added_molecules
 
-    def __validate_csv_header_columns(self, columns: set[str]):
+    def __validate_csv_header_columns(self, columns: set[str]) -> None:
         """
         :param columns:
         :return:
@@ -320,7 +319,7 @@ class MoleculeService:
         if missing_columns:
             raise InvalidCsvHeaderColumnsException(missing_columns)
 
-    def __iterate_on_find_all(self, page_size: int = 100):
+    def __iterate_on_find_all(self, page_size: int = 100) -> MoleculeResponse:
         """
         This is a helper method that will be used in substructure search methods, or other search methods implemented
         int the future.
@@ -350,17 +349,10 @@ class MoleculeService:
                     yield molecule
                 page += 1
 
-    @staticmethod
-    def _redis_key(path, **kwargs):
-        # sorted args, filter out None values
-        sorted_args = sorted([(k, v) for k, v in kwargs.items() if v is not None])
-        return f"molecules:{path}:" + ":".join([f"{v}" for k, v in sorted_args])
-
 
 @lru_cache
 def get_molecule_service(
     repository: Annotated[MoleculeRepository, Depends(get_molecule_repository)],
     session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
-    redis_cache_service: Annotated[RedisCacheService, Depends(get_redis_cache_service)],
 ):
     return MoleculeService(repository, session_factory)
