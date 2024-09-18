@@ -69,8 +69,6 @@ class DrugService:
 
 def get_drug_service(
     drug_repository: Annotated[DrugRepository, Depends(get_drug_repository)],
-    session_factory: Annotated[
-        sessionmaker, Depends(get_session_factory)
-    ],
+    session_factory: Annotated[sessionmaker, Depends(get_session_factory)],
 ):
     return DrugService(drug_repository, session_factory=session_factory)

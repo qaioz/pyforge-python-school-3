@@ -42,8 +42,9 @@ async def caching_middleware(
 
     # I had to disable caching for this pull request because I changed API
     # I will find a way to find better implementation that fits long-running tasks
-    cached_endpoints = {"**/molecules**": 60 * 60 * 24 * 7,
-                        }
+    cached_endpoints = {
+        "**/molecules**": 60 * 60 * 24 * 7,
+    }
     # cached_endpoints = {}
 
     if request.method != "GET":

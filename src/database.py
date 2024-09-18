@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import lru_cache
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import Depends
 from sqlalchemy import func, create_engine, Engine
