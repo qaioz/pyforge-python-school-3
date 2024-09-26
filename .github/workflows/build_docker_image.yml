@@ -12,22 +12,22 @@ jobs:
       name: push docker image to docker hub
       runs-on: ubuntu-latest
       steps:
-        - uses: actions/checkout@v4
-        - name: login to docker hub
-          id: docker-hub
-          env:
-            username: gaiozi
-            password: ${{secrets.DOCKERHUB_PASSWORD}}
-          run: |
-            docker login -u $username -p $password
-        - name: build the docker image
-          id: build-docker-image
-          run: |
-            ls -la
-            docker build -t gaiozi/molecules_api .
-        - name: push the docker image
-          id: push-docker-image
-          run: docker push gaiozi/molecules_api:latest
+#        - uses: actions/checkout@v4
+#        - name: login to docker hub
+#          id: docker-hub
+#          env:
+#            username: gaiozi
+#            password: ${{secrets.DOCKERHUB_PASSWORD}}
+#          run: |
+#            docker login -u $username -p $password
+#        - name: build the docker image
+#          id: build-docker-image
+#          run: |
+#            ls -la
+#            docker build -t gaiozi/molecules_api .
+#        - name: push the docker image
+#          id: push-docker-image
+#          run: docker push gaiozi/molecules_api:latest
 
 
         #now deploy to ec2 if i have github secrets EC2_HOST, EC2_USER, EC2_KEY
