@@ -3,8 +3,7 @@ name: Build and Deploy Docker Image
 on:
   push:
     branches:
-      - main
-      - develop/drugs_and_molecules
+
   pull_request:
     branches:
       - main
