@@ -4,6 +4,6 @@ src/__pycache__/*
 **/.pytest_cache/
 *.pyc
 10000alkanes
-
-
-
+venv
+venv/**
+g
