@@ -12,33 +12,36 @@ jobs:
       name: push docker image to docker hub
       runs-on: ubuntu-latest
       steps:
-#        - uses: actions/checkout@v4
-#        - name: login to docker hub
-#          id: docker-hub
-#          env:
-#            username: gaiozi
-#            password: ${{secrets.DOCKERHUB_PASSWORD}}
-#          run: |
-#            docker login -u $username -p $password
-#        - name: build the docker image
-#          id: build-docker-image
-#          run: |
-#            ls -la
-#            docker build -t gaiozi/molecules_api .
-#        - name: push the docker image
-#          id: push-docker-image
-#          run: docker push gaiozi/molecules_api:latest
+        - uses: actions/checkout@v4
+        - name: login to docker hub
+          id: docker-hub
+          env:
+            username: gaiozi
+            password: ${{secrets.DOCKERHUB_PASSWORD}}
+          run: |
+            docker login -u $username -p $password
+        - name: build the docker image
+          id: build-docker-image
+          run: |
+            ls -la
+            docker build -t gaiozi/molecules_api .
+        - name: push the docker image
+          id: push-docker-image
+          run: docker push gaiozi/molecules_api:latest
 
 
-        #now deploy to ec2 if i have github secrets EC2_HOST, EC2_USER, EC2_KEY, wihout appleboy or anything
+        #now deploy to ec2 if i have github secrets EC2_HOST, EC2_USER, EC2_KEY
 
-
-      - name: Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{secrets.EC2_HOST}}
-          username: ${{secrets.EC2_USER}}
-          key: ${{secrets.EC2_KEY_2}}
-          script: |
-            docker pull gaiozi/molecules_api:latest
-            docker run -d -p 80:80 gaiozi/molecules_api:latest
+        - name: Deploy to EC2
+          uses: appleboy/ssh-action@master
+          with:
+            host: ${{secrets.EC2_HOST}}
+            username: ${{secrets.EC2_USER}}
+            key: ${{secrets.EC2_KEY_2}}
+            script: |
+              docker pull gaiozi/molecules_api:latest
+  #            stop and remove the container
+              docker stop molecules_api
+              docker rm molecules_api
+  #            name the container and rerun on 80
+              docker run -d -p 80:80 --name molecules_api gaiozi/molecules_api:latest
